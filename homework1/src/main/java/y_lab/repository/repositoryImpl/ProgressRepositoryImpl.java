@@ -3,81 +3,108 @@ package y_lab.repository.repositoryImpl;
 import lombok.Getter;
 import lombok.Setter;
 import y_lab.domain.Progress;
-import y_lab.out.ProgressFileStorage;
 import y_lab.repository.ProgressRepository;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.*;
 
 @Getter
 @Setter
 public class ProgressRepositoryImpl implements ProgressRepository{
-    private HashMap<Long, Progress> progresses = new HashMap<>();
-    private Long idGenerated = 0L;
-    private ProgressFileStorage progressFileStorage;
+    private final Connection connection;
 
-    public ProgressRepositoryImpl(String fileName) {
-        this.progressFileStorage = new ProgressFileStorage();
-        this.progressFileStorage.loadFromFile(fileName);
-        this.idGenerated = progressFileStorage.getIdGenerated();
-        this.progresses = progressFileStorage.getProgresses();
+    public ProgressRepositoryImpl(Connection connection) {
+        this.connection = connection;
     }
 
     @Override
-    public void save(Progress progress) {
-        progress.setId(idGenerated);
-        progresses.put(idGenerated, progress);
-        ++idGenerated;
+    public void save(Progress progress) throws SQLException {
+        String sql =
+                "INSERT INTO domain.progresses (id, user_id, habit_id, date) " +
+                        "VALUES (nextval('domain.progress_id_seq'), ?, ?, ?)"; //вызов nextval - явное использование Sequence
+
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setLong(1, progress.getUserId());
+            stmt.setLong(2, progress.getHabitId());
+            stmt.setString(3, progress.getDate().toString());
+
+            stmt.executeUpdate();
+        }
     }
 
     @Override
-    public void deleteAllByHabitId(Long habitId) {
-        List<Long> keysToDelete = new ArrayList<>();
+    public void deleteAllByHabitId(Long habitId) throws SQLException {
+        String sql =
+                "DELETE FROM domain.progresses WHERE habit_id = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setLong(1, habitId);
 
-        for (Map.Entry<Long, Progress> entry : progresses.entrySet()) {
-            if (entry.getValue().getHabit().getId().equals(habitId)) {
-                keysToDelete.add(entry.getKey());
+            stmt.executeUpdate();
+        }
+    }
+
+    @Override
+    public void deleteAllByUserId(Long userId) throws SQLException {
+        String sql =
+                "DELETE FROM domain.progresses WHERE user_id = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setLong(1, userId);
+
+            stmt.executeUpdate();
+        }
+    }
+
+    @Override
+    public Optional<Progress> findById(Long progressId) throws SQLException {
+        String sql =
+                "SELECT * FROM domain.progresses " +
+                        "WHERE id = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setLong(1, progressId);
+            ResultSet resultSet = stmt.executeQuery();
+
+            if (resultSet.next()) {
+                return Optional.of(
+                        new Progress(
+                                progressId
+                                , resultSet.getLong(2)
+                                , resultSet.getLong(3)
+                                , LocalDate.parse(resultSet.getString(4))));
+            } else {
+                return Optional.empty();
             }
         }
-        for (Long key : keysToDelete) {
-            progresses.remove(key);
-        }
     }
 
     @Override
-    public void deleteAllByUserId(Long userId) {
-        List<Long> keysToDelete = new ArrayList<>();
+    public ArrayList<Progress> findByHabitId(Long habitId) throws SQLException {
+        ArrayList<Progress> progresses = new ArrayList<>();
 
-        for (Map.Entry<Long, Progress> entry : progresses.entrySet()) {
-            if (entry.getValue().getUser().getId().equals(userId)) {
-                keysToDelete.add(entry.getKey());
+        String sql =
+                "SELECT * FROM domain.progresses " +
+                        "WHERE habit_id = ?";
+
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setLong(1, habitId);
+            ResultSet resultSet = stmt.executeQuery();
+
+
+
+            while (resultSet.next()) {
+                Progress progress = new Progress();
+
+                progress.setId(resultSet.getLong(1));
+                progress.setUserId(resultSet.getLong(2));
+                progress.setHabitId(resultSet.getLong(3));
+                progress.setDate(LocalDate.parse(resultSet.getString(4)));
+
+                progresses.add(progress);
             }
         }
-        for (Long key : keysToDelete) {
-            progresses.remove(key);
-        }
+        return progresses;
     }
-
-    @Override
-    public Optional<Progress> findById(Long progressId) {
-        return Optional.ofNullable(progresses.get(progressId));
-    }
-
-    @Override
-    public ArrayList<Progress> findByHabitId(Long habitId) {
-        ArrayList<Progress> arrayList = new ArrayList<>();
-        for (Map.Entry<Long, Progress> entry : progresses.entrySet()) {
-            if (entry.getValue().getHabit().getId().equals(habitId)) {
-                arrayList.add(entry.getValue());
-            }
-        }
-        return arrayList;
-    }
-
-    public void saveToFile(String fileName) {
-        progressFileStorage.setProgresses(progresses);
-        progressFileStorage.setIdGenerated(idGenerated);
-        progressFileStorage.saveToFile(fileName);
-    }
-
-
 }

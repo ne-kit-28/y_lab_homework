@@ -13,7 +13,7 @@ import java.time.LocalDate;
 @RequiredArgsConstructor
 public class Habit implements Serializable {
     private Long id;
-    private User user;
+    private Long userId;
     private String name;
     private String description;
     private Frequency frequency;

@@ -3,88 +3,179 @@ package y_lab.repository.repositoryImpl;
 import lombok.Getter;
 import lombok.Setter;
 import y_lab.domain.Habit;
-import y_lab.out.HabitFileStorage;
+import y_lab.domain.enums.Frequency;
 import y_lab.repository.HabitRepository;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-
+import java.sql.*;
+import java.time.LocalDate;
+import java.util.*;
 
 @Setter
 @Getter
 public class HabitRepositoryImpl implements HabitRepository {
-    HashMap<Long, Habit> habits = new HashMap<>();
-    Long idGenerated = 0L;
-    private HabitFileStorage habitFileStorage;
 
-    public HabitRepositoryImpl(String fileName) {
-        this.habitFileStorage = new HabitFileStorage();
-        this.habitFileStorage.loadFromFile(fileName);
-        this.habits = habitFileStorage.getHabits();
-        this.idGenerated = habitFileStorage.getIdGenerated();
+    private final Connection connection;
+
+    public HabitRepositoryImpl(Connection connection) {
+        this.connection = connection;
     }
 
     @Override
-    public Optional<Habit> findById(Long id) {
-        return Optional.ofNullable(habits.get(id));
-    }
+    public Optional<Habit> findById(Long id) throws SQLException {
 
-    @Override
-    public Optional<Habit> findByName(String name, Long userId) {
-        for (Map.Entry<Long, Habit> entry : habits.entrySet()) {
-            if (entry.getValue().getName().equals(name) && entry.getValue().getUser().getId().equals(userId)) {
-                return Optional.of(entry.getValue());
+        String sql =
+                "SELECT * FROM domain.habits " +
+                "WHERE id = ?";
+
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setLong(1, id);
+            ResultSet resultSet = stmt.executeQuery();
+
+            if (resultSet.next()) {
+                return Optional.of(
+                        new Habit(
+                                id
+                                , resultSet.getLong("user_id")
+                                , resultSet.getString("name")
+                                , resultSet.getString("description")
+                                , Frequency.fromString(resultSet.getString("frequency"))
+                                , LocalDate.parse(resultSet.getString("created_at"))));
+            } else {
+                return Optional.empty();
             }
         }
-        return Optional.empty();
     }
 
     @Override
-    public void save(Habit habit) {
-        habit.setId(idGenerated);
-        habits.put(idGenerated, habit);
-        ++idGenerated;
-    }
+    public Optional<Habit> findByName(String name, Long userId) throws SQLException{
+        String sql =
+                "SELECT * FROM domain.habits " +
+                        "WHERE name = ? AND user_id = ?";
 
-    @Override
-    public void delete(Long id) {
-        habits.remove(id);
-    }
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setLong(2, userId);
+            stmt.setString(1, name);
+            ResultSet resultSet = stmt.executeQuery();
 
-    @Override
-    public void deleteAllByUserId(Long userId) {
-        ArrayList<Long> keysToDelete = new ArrayList<>();
-        for (Map.Entry<Long, Habit> entry : habits.entrySet()) {
-            if (entry.getValue().getUser().getId().equals(userId)) {
-                keysToDelete.add(entry.getKey());
+            if (resultSet.next()) {
+                return Optional.of(
+                        new Habit(
+                                resultSet.getLong("id")
+                                , userId
+                                , name
+                                , resultSet.getString("description")
+                                , Frequency.fromString(resultSet.getString("frequency"))
+                                , LocalDate.parse(resultSet.getString("created_at"))));
+            } else {
+                return Optional.empty();
             }
         }
-        for (Long key : keysToDelete) {
-            this.delete(key);
+    }
+
+    @Override
+    public void save(Habit habit) throws SQLException{
+        String sql =
+                "INSERT INTO domain.habits (id, user_id, name, description, frequency, created_at) " +
+                        "VALUES (nextval('domain.habit_id_seq'), ?, ?, ?, ?, ?)"; //вызов nextval - явное использование Sequence
+
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setLong(1, habit.getUserId());
+            stmt.setString(2, habit.getName());
+            stmt.setString(3, habit.getDescription());
+            stmt.setString(4, habit.getFrequency().getValue());
+            stmt.setString(5, habit.getCreatedAt().toString());
+
+            stmt.executeUpdate();
         }
     }
 
     @Override
-    public Optional<ArrayList<Habit>> findHabitsByUserId(Long userId) {
-        ArrayList<Habit> habitArrayList = new ArrayList<>();
-        for (Map.Entry<Long, Habit> entry : habits.entrySet()) {
-            if (entry.getValue().getUser().getId().equals(userId)) {
-                habitArrayList.add(entry.getValue());
+    public void delete(Long id) throws SQLException{
+        String sql =
+                "DELETE FROM domain.habits WHERE id = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setLong(1, id);
+            stmt.executeUpdate();
+        }
+    }
+
+    @Override
+    public void deleteAllByUserId(Long userId) throws SQLException{
+        String sql =
+                "DELETE FROM domain.habits WHERE user_id = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setLong(1, userId);
+            stmt.executeUpdate();
+        }
+    }
+
+    @Override
+    public Optional<ArrayList<Habit>> findHabitsByUserId(Long userId) throws SQLException{
+        ArrayList<Habit> habits = new ArrayList<>();
+
+        String sql =
+                "SELECT * FROM domain.habits " +
+                        "WHERE user_id = ?";
+
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setLong(1, userId);
+            ResultSet resultSet = stmt.executeQuery();
+
+            while (resultSet.next()) {
+                Habit habit = new Habit();
+
+                habit.setId(resultSet.getLong(1));
+                habit.setUserId(resultSet.getLong(2));
+                habit.setName(resultSet.getString(3));
+                habit.setDescription(resultSet.getString(4));
+                habit.setFrequency(Frequency.fromString(resultSet.getString(5)));
+                habit.setCreatedAt(LocalDate.parse(resultSet.getString(6)));
+
+                habits.add(habit);
             }
         }
-        return Optional.of(habitArrayList);
+        return Optional.of(habits);
     }
 
     @Override
-    public ArrayList<Habit> getAll() {
-        return new ArrayList<>(habits.values());
+    public ArrayList<Habit> getAll() throws SQLException{
+        ArrayList<Habit> habits = new ArrayList<>();
+
+        String sql =
+                "SELECT * FROM domain.habits";
+
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            ResultSet resultSet = stmt.executeQuery();
+
+            while (resultSet.next()) {
+                Habit habit = new Habit();
+
+                habit.setId(resultSet.getLong(1));
+                habit.setUserId(resultSet.getLong(2));
+                habit.setName(resultSet.getString(3));
+                habit.setDescription(resultSet.getString(4));
+                habit.setFrequency(Frequency.fromString(resultSet.getString(5)));
+                habit.setCreatedAt(LocalDate.parse(resultSet.getString(6)));
+
+                habits.add(habit);
+            }
+        }
+        return habits;
     }
 
-    public void saveToFile(String fileName) {
-        habitFileStorage.setHabits(habits);
-        habitFileStorage.setIdGenerated(idGenerated);
-        habitFileStorage.saveToFile(fileName);
+    @Override
+    public void update(Long id, Habit habit) throws SQLException{
+        String sql = "UPDATE domain.habits SET user_id = ?, name = ?, description = ?, frequency = ?, create_at = ? WHERE id = ?";
+
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setLong(7, habit.getId());
+            stmt.setLong(1, habit.getUserId());
+            stmt.setString(2, habit.getName());
+            stmt.setString(3, habit.getDescription());
+            stmt.setString(4, habit.getFrequency().getValue());
+            stmt.setString(5, habit.getCreatedAt().toString());
+
+            stmt.executeUpdate();
+        }
     }
 }

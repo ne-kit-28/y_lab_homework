@@ -2,6 +2,7 @@ package y_lab.repository;
 
 import y_lab.domain.Progress;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Optional;
 
@@ -16,21 +17,21 @@ public interface ProgressRepository {
      *
      * @param progress the Progress entity to be saved.
      */
-    void save(Progress progress);
+    void save(Progress progress) throws SQLException;
 
     /**
      * Deletes all Progress entities associated with a specific Habit ID.
      *
      * @param habitId the ID of the Habit for which all associated progress entries will be deleted.
      */
-    void deleteAllByHabitId(Long habitId);
+    void deleteAllByHabitId(Long habitId) throws SQLException;
 
     /**
      * Deletes all Progress entities associated with a specific User ID.
      *
      * @param userId the ID of the User for whom all progress entries will be deleted.
      */
-    void deleteAllByUserId(Long userId);
+    void deleteAllByUserId(Long userId) throws SQLException;
 
     /**
      * Finds a Progress entity by its ID.
@@ -38,7 +39,7 @@ public interface ProgressRepository {
      * @param progressId the ID of the Progress entity to be found.
      * @return an Optional containing the Progress entity if found, otherwise an empty Optional.
      */
-    Optional<Progress> findById(Long progressId);
+    Optional<Progress> findById(Long progressId) throws SQLException;
 
     /**
      * Finds all Progress entities associated with a specific Habit ID.
@@ -46,5 +47,5 @@ public interface ProgressRepository {
      * @param habitId the ID of the Habit whose progress entries are to be found.
      * @return an ArrayList containing all Progress entities related to the specified Habit ID.
      */
-    ArrayList<Progress> findByHabitId(Long habitId);
+    ArrayList<Progress> findByHabitId(Long habitId) throws SQLException;
 }

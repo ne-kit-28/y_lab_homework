@@ -13,13 +13,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 class UserRepositoryImplTest {
 
     private UserRepositoryImpl userRepository;
-    private final String userFile = "testUsers.ser";
-    private final String adminFile = "testAdmins.ser";
 
     @BeforeEach
     void setUp() {
         // Create a new UserRepositoryImpl before each test
-        userRepository = new UserRepositoryImpl(userFile, adminFile);
+        userRepository = new UserRepositoryImpl();
     }
 
     @Test

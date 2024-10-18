@@ -23,7 +23,7 @@ class HabitRepositoryImplTest {
     void setUp() {
 
         // Initialize the repository without any file loading
-        habitRepository = new HabitRepositoryImpl("");
+        habitRepository = new HabitRepositoryImpl();
         habitRepository.setHabits(new HashMap<>());
 
         // Create a habit for testing

@@ -2,30 +2,36 @@ package y_lab;
 
 import y_lab.in.adapter.ConsoleUserInputAdapter;
 import y_lab.service.serviceImpl.*;
-import y_lab.util.Factory;
+import y_lab.repository.DbConnectionFactory;
+import y_lab.service.StartApplicationFactory;
 
 public class Main {
     public static void main(String[] args) {
 
-        Factory factory = new Factory();
+        try {
+            StartApplicationFactory startApplicationFactory = new StartApplicationFactory();
 
-        HabitServiceImpl habitService = factory.createHabitService();
-        ProgressServiceImpl progressService = factory.createProgressService();
-        UserServiceImpl userService = factory.createUserService();
-        LoginServiceImpl loginService = factory.createLoginService();
-        ExecutorServiceImpl executorService = factory.createExecutorService();
+            startApplicationFactory.executeMigration();
 
-        ConsoleUserInputAdapter inputAdapter = new ConsoleUserInputAdapter(
-                habitService
-                , progressService
-                , userService
-                , loginService
-        );
+            HabitServiceImpl habitService = startApplicationFactory.createHabitService();
+            ProgressServiceImpl progressService = startApplicationFactory.createProgressService();
+            UserServiceImpl userService = startApplicationFactory.createUserService();
+            LoginServiceImpl loginService = startApplicationFactory.createLoginService();
+            ExecutorServiceImpl executorService = startApplicationFactory.createExecutorService();
 
-        executorService.startScheduler();
-        inputAdapter.start();
-        executorService.stopScheduler();
+            ConsoleUserInputAdapter inputAdapter = new ConsoleUserInputAdapter(
+                    habitService
+                    , progressService
+                    , userService
+                    , loginService
+            );
 
-        factory.saveData();
+            executorService.startScheduler();
+            inputAdapter.start();
+            executorService.stopScheduler();
+        }
+        catch (Exception ex) {
+            System.out.println(ex.getMessage());
+        }
     }
 }

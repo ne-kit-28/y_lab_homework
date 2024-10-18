@@ -2,6 +2,7 @@ package y_lab.repository;
 
 import y_lab.domain.User;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Optional;
 
@@ -17,7 +18,7 @@ public interface UserRepository {
      * @param email the email to be checked.
      * @return true if the email exists, false otherwise.
      */
-    boolean isEmailExist(String email);
+    boolean isEmailExist(String email) throws SQLException;
 
     /**
      * Checks if the given email belongs to an admin user.
@@ -25,14 +26,14 @@ public interface UserRepository {
      * @param email the email to be checked.
      * @return true if the email is an admin email, false otherwise.
      */
-    boolean isAdminEmail(String email);
+    boolean isAdminEmail(String email) throws SQLException;
 
     /**
      * Saves the provided User entity.
      *
      * @param user the User entity to be saved.
      */
-    void save(User user);
+    void save(User user) throws SQLException;
 
     /**
      * Finds a User entity by its email.
@@ -40,7 +41,7 @@ public interface UserRepository {
      * @param email the email of the User to be found.
      * @return an Optional containing the User entity if found, otherwise an empty Optional.
      */
-    Optional<User> findByEmail(String email);
+    Optional<User> findByEmail(String email) throws SQLException;
 
     /**
      * Finds a User entity by its ID.
@@ -48,21 +49,21 @@ public interface UserRepository {
      * @param id the ID of the User to be found.
      * @return an Optional containing the User entity if found, otherwise an empty Optional.
      */
-    Optional<User> findById(Long id);
+    Optional<User> findById(Long id) throws SQLException;
 
     /**
      * Retrieves all User entities from the repository.
      *
      * @return an ArrayList containing all User entities.
      */
-    ArrayList<User> getAll();
+    ArrayList<User> getAll() throws SQLException;
 
     /**
      * Deletes a User entity by its ID.
      *
      * @param id the ID of the User to be deleted.
      */
-    void deleteById(Long id);
+    void deleteById(Long id) throws SQLException;
 
     /**
      * Updates the User entity with the given ID.
@@ -70,5 +71,5 @@ public interface UserRepository {
      * @param id   the ID of the User to be updated.
      * @param user the User entity containing updated information.
      */
-    void update(Long id, User user);
+    void update(Long id, User user) throws SQLException;
 }

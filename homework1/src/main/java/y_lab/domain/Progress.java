@@ -14,7 +14,7 @@ import java.time.LocalDate;
 @Builder
 public class Progress implements Serializable {
     private Long id;
-    private User user;
-    private Habit habit;
+    private Long userId;
+    private Long habitId;
     private LocalDate date;
 }
