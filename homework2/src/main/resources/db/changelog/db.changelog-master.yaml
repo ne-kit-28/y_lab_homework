@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - include:
+        file: create-schema.yaml
+        relativeToChangelogFile: true
+  - include:
+      file: create-tables.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: create-sequence.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: seed-data.yaml
+      relativeToChangelogFile: true

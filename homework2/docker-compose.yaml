@@ -1,0 +1,28 @@
+services:
+  postgres:
+    build: .
+    image: postgres:15
+    environment:
+      POSTGRES_USER: y_lab_user
+      POSTGRES_PASSWORD: Y_lab_password
+      POSTGRES_DB: y_lab
+    ports:
+      - 5433:5432
+#    volumes:
+#      - ../environment:/docker-entrypoint-initdb.d
+    networks:
+      - habits-network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: nickit.nic098@yandex.ru
+      PGADMIN_DEFAULT_PASSWORD: postgres
+    ports:
+      - "5050:80"
+    networks:
+      - habits-network
+
+networks:
+  habits-network:
+    driver: bridge
