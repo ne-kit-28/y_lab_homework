@@ -9,7 +9,6 @@ public class ConsoleMessages {
                 4. Exit
             """;
 
-    // Можешь добавить другие текстовые блоки для переиспользования в будущем
     public static final String HABIT_MENU_OPTIONS = """
             Select option:
                 1. Create habit

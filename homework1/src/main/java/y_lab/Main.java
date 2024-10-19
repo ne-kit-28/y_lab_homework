@@ -29,6 +29,7 @@ public class Main {
             executorService.startScheduler();
             inputAdapter.start();
             executorService.stopScheduler();
+
             startApplicationFactory.closeConnection();
         }
         catch (Exception ex) {
