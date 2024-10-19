@@ -12,10 +12,14 @@ mvn -v
 
 git clone https://github.com/ne-kit-28/y_lab_homework.git
 cd y_lab_homework
-git checkout -b homework1 origin/homework1
-cd homework1
+git checkout -b homework2 origin/homework2
+cd homework2
 
-3. Сборка проекта
+3. Запустите докер
+поднимите контейнер с БД:
+docker compose up
+
+4. Сборка проекта
 Выполните команду, чтобы собрать проект. Это скомпилирует код, выполнит тесты и создаст исполняемый JAR-файл.
 
 mvn clean install
@@ -25,6 +29,6 @@ mvn clean install
 Если нет возможности запустить проект на Java 17, то можно использовать команду с пропуском тестов:
 mvn clean install -DskipTests
 
-4. Запуск проекта
-После успешной сборки можно запустить проект.
+5. Запуск проекта
+После успешной сборки и запуска БД можно запустить проект.
 java -jar target/habits-latest.jar
