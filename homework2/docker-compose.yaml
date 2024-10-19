@@ -8,8 +8,6 @@ services:
       POSTGRES_DB: y_lab
     ports:
       - 5433:5432
-#    volumes:
-#      - ../environment:/docker-entrypoint-initdb.d
     networks:
       - habits-network
 

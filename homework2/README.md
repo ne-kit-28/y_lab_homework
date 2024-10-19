@@ -16,6 +16,9 @@ git checkout -b homework2 origin/homework2
 cd homework2
 
 3. Запустите докер
+Можно проверить установлен ли он:
+docker --version
+
 поднимите контейнер с БД:
 docker compose up -d
 
