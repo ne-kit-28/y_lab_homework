@@ -9,8 +9,8 @@ mvn -v
 
 git clone https://github.com/ne-kit-28/y_lab_homework.git
 cd y_lab_homework
-git checkout -b homework1 origin/homework1
-cd homework1
+git checkout -b homework1 origin/homework2
+cd homework2
 
 3. Сборка проекта
 Выполните команду, чтобы собрать проект. Это скомпилирует код, выполнит тесты и создаст исполняемый JAR-файл.

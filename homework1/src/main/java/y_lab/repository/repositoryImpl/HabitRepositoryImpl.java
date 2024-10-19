@@ -165,10 +165,10 @@ public class HabitRepositoryImpl implements HabitRepository {
 
     @Override
     public void update(Long id, Habit habit) throws SQLException{
-        String sql = "UPDATE domain.habits SET user_id = ?, name = ?, description = ?, frequency = ?, create_at = ? WHERE id = ?";
+        String sql = "UPDATE domain.habits SET user_id = ?, name = ?, description = ?, frequency = ?, created_at = ? WHERE id = ?";
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setLong(7, habit.getId());
+            stmt.setLong(6, habit.getId());
             stmt.setLong(1, habit.getUserId());
             stmt.setString(2, habit.getName());
             stmt.setString(3, habit.getDescription());

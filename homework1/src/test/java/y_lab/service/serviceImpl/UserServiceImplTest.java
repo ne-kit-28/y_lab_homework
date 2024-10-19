@@ -1,11 +1,12 @@
 package y_lab.service.serviceImpl;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import y_lab.domain.User;
 import y_lab.domain.enums.Role;
 import y_lab.repository.repositoryImpl.HabitRepositoryImpl;
@@ -13,112 +14,104 @@ import y_lab.repository.repositoryImpl.ProgressRepositoryImpl;
 import y_lab.repository.repositoryImpl.UserRepositoryImpl;
 import y_lab.util.HashFunction;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
 
+@Testcontainers
 class UserServiceImplTest {
 
-    @Mock
-    private UserRepositoryImpl userRepository;
-
-    @Mock
-    private HabitRepositoryImpl habitRepository;
-
-    @Mock
-    private ProgressRepositoryImpl progressRepository;
-
-    @InjectMocks
+    @Container
+    private static final PostgreSQLContainer<?> postgresContainer = new PostgreSQLContainer<>("postgres:latest")
+            .withDatabaseName("testdb")
+            .withUsername("user")
+            .withPassword("password");
     private UserServiceImpl userService;
-
-    private User testUser;
+    private Connection connection;
 
     @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
+    public void setUp() throws SQLException {
+        connection = DriverManager.getConnection(postgresContainer.getJdbcUrl(), postgresContainer.getUsername(), postgresContainer.getPassword());
 
-        testUser = new User();
-        testUser.setId(1L);
-        testUser.setEmail("test@example.com");
-        testUser.setName("Test User");
-        testUser.setRole(Role.REGULAR);
+        UserRepositoryImpl userRepository = new UserRepositoryImpl(connection);
+        HabitRepositoryImpl habitRepository = new HabitRepositoryImpl(connection);
+        ProgressRepositoryImpl progressRepository = new ProgressRepositoryImpl(connection);
+
+        userService = new UserServiceImpl(userRepository, habitRepository, progressRepository, connection);
+
+        CreateSchema.createSchema(connection);
+
+        userRepository.save(new User("test@example.com", "hashedPassword", "TestUser",false, Role.REGULAR));
+    }
+
+    @AfterEach
+    public void tearDown() throws SQLException {
+        connection.createStatement().execute("TRUNCATE TABLE domain.progresses CASCADE;");
+        connection.createStatement().execute("TRUNCATE TABLE domain.habits CASCADE;");
+        connection.createStatement().execute("TRUNCATE TABLE domain.users CASCADE;");
+        connection.createStatement().execute("TRUNCATE TABLE service.admins CASCADE;");
+
+        connection.createStatement().execute("ALTER SEQUENCE domain.user_id_seq RESTART WITH 1;");
+        connection.createStatement().execute("ALTER SEQUENCE domain.habit_id_seq RESTART WITH 1;");
+        connection.createStatement().execute("ALTER SEQUENCE domain.progress_id_seq RESTART WITH 1;");
+
+        connection.close();
     }
 
     @Test
-    @DisplayName("Should update user profile when valid data is provided")
-    void editUser() {
-        // Arrange
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
+    @DisplayName("изменяет пользователя")
+    public void editUser() {
+        Long userId = 1L;
+        String newName = "Updated User";
+        String newEmail = "updated@example.com";
+        String newPassword = "newPassword";
 
-        // Act
-        userService.editUser(1L, "New Name", "new@example.com", "newPassword");
+        userService.editUser(userId, newName, newEmail, newPassword);
 
-        // Assert
-        assertThat(testUser.getName()).isEqualTo("New Name");
-        assertThat(testUser.getEmail()).isEqualTo("new@example.com");
-        assertThat(testUser.getPasswordHash()).isEqualTo(HashFunction.hashPassword("newPassword"));
-        verify(userRepository, times(1)).findById(1L);
+        Optional<User> updatedUser = userService.getUser("updated@example.com");
+        assertTrue(updatedUser.isPresent());
+        assertEquals(newName, updatedUser.get().getName());
+        assertEquals(newEmail, updatedUser.get().getEmail());
+        assertEquals(HashFunction.hashPassword(newPassword), updatedUser.get().getPasswordHash());
     }
 
     @Test
-    @DisplayName("Should throw exception when user is not found for blocking")
-    void blockUser() {
-        // Arrange
-        when(userRepository.findById(1L)).thenReturn(Optional.empty());
-
-        // Act & Assert
-        NoSuchElementException exception = assertThrows(NoSuchElementException.class,
-                () -> userService.blockUser(1L, true));
-
-        assertThat(exception.getMessage()).isEqualTo("User with ID 1 not found.");
-    }
-
-    @Test
-    @DisplayName("Should delete user, habits, and progress when deleteUser is called")
+    @DisplayName("удаляет существующего пользователя")
     void deleteUser() {
-        // Act
-        userService.deleteUser(1L);
-
-        // Assert
-        verify(userRepository, times(1)).deleteById(1L);
-        verify(habitRepository, times(1)).deleteAllByUserId(1L);
-        verify(progressRepository, times(1)).deleteAllByUserId(1L);
+        Optional<User> deletedUser = userService.getUser("test@example.com");
+        userService.deleteUser(deletedUser.get().getId());
+        deletedUser = userService.getUser("test@example.com");
+        assertFalse(deletedUser.isPresent(), "User should be deleted");
     }
 
     @Test
-    @DisplayName("Should return optional user when email is found")
-    void getUser() {
-        // Arrange
-        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(testUser));
+    @DisplayName("Блокировка пользователя")
+    void blockUser() {
 
-        // Act
-        Optional<User> result = userService.getUser("test@example.com");
+        userService.blockUser(1L, true);
 
-        // Assert
-        assertThat(result).isPresent();
-        assertThat(result.get().getEmail()).isEqualTo("test@example.com");
-        verify(userRepository, times(1)).findByEmail("test@example.com");
+        Optional<User> blockedUser = userService.getUser("test@example.com");
+        assertTrue(blockedUser.isPresent(), "User should exist");
+        assertTrue(blockedUser.get().isBlock(), "User should be blocked");
     }
 
     @Test
-    @DisplayName("Should return a list of regular users")
+    @DisplayName("Получает список всех пользователей")
     void getUsers() {
-        // Arrange
-        ArrayList<User> users = new ArrayList<>();
-        users.add(testUser);
-        when(userRepository.getAll()).thenReturn(users);
+        LoginServiceImpl loginService = new LoginServiceImpl(new UserRepositoryImpl(connection), connection);
+        loginService.register("User One", "user1@example.com", "hashedPassword1");
+        loginService.register("User Two", "user2@example.com", "hashedPassword2");
 
-        // Act
-        ArrayList<User> result = userService.getUsers();
+        ArrayList<User> users = userService.getUsers();
 
-        // Assert
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getRole()).isEqualTo(Role.REGULAR);
-        verify(userRepository, times(1)).getAll();
+        assertEquals(3, users.size(), "Should return 3 users");
+
+        assertTrue(users.stream().anyMatch(u -> "test@example.com".equals(u.getEmail())));
+        assertTrue(users.stream().anyMatch(u -> "user1@example.com".equals(u.getEmail())));
+        assertTrue(users.stream().anyMatch(u -> "user2@example.com".equals(u.getEmail())));
     }
 }

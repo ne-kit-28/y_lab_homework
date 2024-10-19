@@ -1,128 +1,87 @@
 package y_lab.service.serviceImpl;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import y_lab.domain.User;
-import y_lab.domain.enums.Role;
 import y_lab.repository.UserRepository;
-import y_lab.util.HashFunction;
+import y_lab.repository.repositoryImpl.UserRepositoryImpl;
 
-import java.util.Optional;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
 
-class LoginServiceImplTest {
+@Testcontainers
+public class LoginServiceImplTest {
 
-    @Mock
-    private UserRepository userRepository;
+    @Container
+    private static final PostgreSQLContainer<?> postgresContainer = new PostgreSQLContainer<>("postgres:latest")
+            .withDatabaseName("testdb")
+            .withUsername("user")
+            .withPassword("password");
 
-    @InjectMocks
+    private Connection connection;
     private LoginServiceImpl loginService;
 
     @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
+    public void setUp() throws SQLException {
+        connection = DriverManager.getConnection(postgresContainer.getJdbcUrl(), postgresContainer.getUsername(), postgresContainer.getPassword());
+
+        UserRepository userRepository = new UserRepositoryImpl(connection);
+
+        loginService = new LoginServiceImpl(userRepository, connection);
+
+        CreateSchema.createSchema(connection);
+    }
+
+    @AfterEach
+    public void tearDown() throws SQLException {
+        connection.createStatement().execute("TRUNCATE TABLE domain.progresses CASCADE;");
+        connection.createStatement().execute("TRUNCATE TABLE domain.habits CASCADE;");
+        connection.createStatement().execute("TRUNCATE TABLE domain.users CASCADE;");
+        connection.createStatement().execute("TRUNCATE TABLE service.admins CASCADE;");
+
+        connection.createStatement().execute("ALTER SEQUENCE domain.user_id_seq RESTART WITH 1;");
+        connection.createStatement().execute("ALTER SEQUENCE domain.habit_id_seq RESTART WITH 1;");
+        connection.createStatement().execute("ALTER SEQUENCE domain.progress_id_seq RESTART WITH 1;");
+
+        connection.close();
     }
 
     @Test
-    @DisplayName("Should return user when login is successful")
-    void loginSuccess() {
-        String email = "test@example.com";
-        String password = "123";
-        User user = new User(email, HashFunction.hashPassword(password), "Test User", false, Role.REGULAR);
-        when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
+    @DisplayName("login and registration")
+    public void Login() {
 
-        User result = loginService.login(email, password);
+        loginService.register("John Doe", "john.doe@example.com", "password123");
 
-        assertThat(result).isNotNull();
-        assertThat(result.getEmail()).isEqualTo(email);
-        assertThat(result.getName()).isEqualTo("Test User");
-        verify(userRepository, times(1)).findByEmail(email);
+        User loggedInUser = loginService.login("john.doe@example.com", "password123");
+
+        assertThat(loggedInUser).isNotNull();
+        assertThat(loggedInUser.getEmail()).isEqualTo("john.doe@example.com");
+        assertThat(loggedInUser.getName()).isEqualTo("John Doe");
     }
 
     @Test
-    @DisplayName("Should return user with ID -1 when user does not exist")
-    void loginUserDoesNotExist() {
-        String email = "nonexistent@example.com";
-        String password = "123";
-        when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
+    @DisplayName("несуществующий логин")
+    public void testLoginInvalidEmail() {
+        User loggedInUser = loginService.login("invalidemail@example.com", "password123");
 
-        User result = loginService.login(email, password);
-
-        assertThat(result.getId()).isEqualTo(-1L);
-        verify(userRepository, times(1)).findByEmail(email);
+        assertThat(loggedInUser.getId()).isEqualTo(-1L);
     }
 
     @Test
-    @DisplayName("Should return user with ID -1 when password is incorrect")
-    void loginIncorrectPassword() {
-        String email = "test@example.com";
-        String correctPassword = "123";
-        String incorrectPassword = "wrongpassword";
-        User user = new User(email, HashFunction.hashPassword(correctPassword), "Test User", false, Role.REGULAR);
-        when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
+    @DisplayName("false при неверном пароле")
+    public void testLoginIncorrectPassword() throws SQLException {
+        loginService.register("Petr", "petr@ya.com", "password123");
 
-        User result = loginService.login(email, incorrectPassword);
+        User loggedInUser = loginService.login("petr@ya.com", "wrongpassword");
 
-        assertThat(result.getId()).isEqualTo(-1L);
-        verify(userRepository, times(1)).findByEmail(email);
-    }
-
-    @Test
-    @DisplayName("Should return user with ID -1 when account is blocked")
-    void loginBlockedAccount() {
-        String email = "blocked@example.com";
-        String password = "123";
-        User user = new User(email, HashFunction.hashPassword(password), "Blocked User", true, Role.REGULAR);
-        when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
-
-        User result = loginService.login(email, password);
-
-        assertThat(result.getId()).isEqualTo(-1L);
-        verify(userRepository, times(1)).findByEmail(email);
-    }
-
-    @Test
-    @DisplayName("Should register user when all conditions are met")
-    void registerSuccess() {
-        String email = "newuser@example.com";
-        String name = "New User";
-        String password = "123";
-        when(userRepository.isEmailExist(email)).thenReturn(false);
-        when(userRepository.isAdminEmail(email)).thenReturn(false);
-
-        loginService.register(name, email, password);
-
-        verify(userRepository, times(1)).save(any(User.class));
-    }
-
-    @Test
-    @DisplayName("Should not register user when email is invalid")
-    void registerInvalidEmail() {
-        String email = "invalidemail";
-        String name = "New User";
-        String password = "123";
-
-        loginService.register(name, email, password);
-
-        verify(userRepository, never()).save(any(User.class));
-    }
-
-    @Test
-    @DisplayName("Should not register user when email already exists")
-    void registerEmailExists() {
-        String email = "existing@example.com";
-        String name = "Existing User";
-        String password = "123";
-        when(userRepository.isEmailExist(email)).thenReturn(true);
-
-        loginService.register(name, email, password);
-
-        verify(userRepository, never()).save(any(User.class));
+        assertThat(loggedInUser.getId()).isEqualTo(-1L);
     }
 }

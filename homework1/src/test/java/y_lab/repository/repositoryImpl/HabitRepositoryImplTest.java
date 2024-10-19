@@ -1,126 +1,162 @@
 package y_lab.repository.repositoryImpl;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import y_lab.domain.Habit;
-import y_lab.domain.User;
-import y_lab.domain.enums.Role;
+import y_lab.domain.enums.Frequency;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
-class HabitRepositoryImplTest {
+@Testcontainers
+public class HabitRepositoryImplTest {
 
+    @Container
+    private PostgreSQLContainer<?> postgresContainer = new PostgreSQLContainer<>("postgres:15")
+            .withDatabaseName("testdb")
+            .withUsername("testuser")
+            .withPassword("testpass");
+
+    private Connection connection;
     private HabitRepositoryImpl habitRepository;
-    private Habit habit;
-    private User user;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws SQLException {
+        String jdbcUrl = postgresContainer.getJdbcUrl();
+        String username = postgresContainer.getUsername();
+        String password = postgresContainer.getPassword();
 
-        // Initialize the repository without any file loading
-        habitRepository = new HabitRepositoryImpl();
-        habitRepository.setHabits(new HashMap<>());
+        connection = DriverManager.getConnection(jdbcUrl, username, password);
+        habitRepository = new HabitRepositoryImpl(connection);
 
-        // Create a habit for testing
-        habit = new Habit();
-        habit.setId(1L);
-        habit.setName("Exercise");
+        // Create sequences in the domain schema
+        connection.prepareStatement(
+                "CREATE SCHEMA IF NOT EXISTS domain;" +
+                        "CREATE SEQUENCE IF NOT EXISTS domain.user_id_seq;" +
+                        "CREATE SEQUENCE IF NOT EXISTS domain.habit_id_seq;" +
+                        "CREATE SEQUENCE IF NOT EXISTS domain.progress_id_seq;"
+        ).execute();
 
-        user = new User( 1L,"nik@ya.ru", "", "nik", false, Role.ADMINISTRATOR, "");
-        habit.setUser(user);
+        // Create tables in the domain schema
+        connection.prepareStatement(
+                "CREATE TABLE IF NOT EXISTS domain.users (" +
+                        "id BIGINT PRIMARY KEY DEFAULT nextval('domain.user_id_seq'), " +
+                        "username VARCHAR(255));" +
 
-        // Manually add habit to repository's in-memory storage
-        habitRepository.getHabits().put(1L, habit);
-        habitRepository.setIdGenerated(2L); // Simulate the next generated ID
+                        "CREATE TABLE IF NOT EXISTS domain.habits (" +
+                        "id BIGINT PRIMARY KEY DEFAULT nextval('domain.habit_id_seq'), " +
+                        "user_id BIGINT, " +
+                        "name VARCHAR(64), " +
+                        "description VARCHAR(128), " +
+                        "frequency VARCHAR(16), " +
+                        "created_at VARCHAR(32), " +
+                        "FOREIGN KEY (user_id) REFERENCES domain.users(id));" +
+
+                        "CREATE TABLE IF NOT EXISTS domain.progresses (" +
+                        "id BIGINT PRIMARY KEY DEFAULT nextval('domain.progress_id_seq'), " +
+                        "user_id BIGINT, " +
+                        "habit_id BIGINT, " +
+                        "date VARCHAR(32), " +
+                        "FOREIGN KEY (habit_id) REFERENCES domain.habits(id), " +
+                        "FOREIGN KEY (user_id) REFERENCES domain.users(id));"
+        ).execute();
+
+        // Create admins table in service schema
+        connection.prepareStatement(
+                "CREATE SCHEMA IF NOT EXISTS service;" +
+                        "CREATE TABLE IF NOT EXISTS service.admins (" +
+                        "id BIGINT PRIMARY KEY, " +
+                        "email VARCHAR(255));"
+        ).execute();
+    }
+
+    @AfterEach
+    void tearDown() throws SQLException {
+        connection.prepareStatement("DROP SCHEMA IF EXISTS domain CASCADE;").execute();
+        connection.prepareStatement("DROP SCHEMA IF EXISTS service CASCADE;").execute();
+        connection.close();
     }
 
     @Test
-    @DisplayName("Test finds habit by id")
-    void testFindById() {
-        Optional<Habit> foundHabit = habitRepository.findById(1L);
+    void testSaveAndFindById() throws SQLException {
+        // Insert user
+        connection.prepareStatement("INSERT INTO domain.users (username) VALUES ('testuser');").execute();
 
-        assertThat(foundHabit).isPresent();
-        assertThat(foundHabit.get().getName()).isEqualTo("Exercise");
+        // Given
+        Habit habit = new Habit(null, 1L, "Exercise", "Daily Exercise", Frequency.DAILY, LocalDate.now());
+
+        // When
+        habitRepository.save(habit);
+
+        // Then
+        Optional<Habit> foundHabit = habitRepository.findByName("Exercise", 1L);
+        assertTrue(foundHabit.isPresent());
+        assertEquals("Exercise", foundHabit.get().getName());
+        assertEquals("Daily Exercise", foundHabit.get().getDescription());
     }
 
     @Test
-    @DisplayName("Test save habit to repository")
-    void testSaveHabit() {
-        Habit newHabit = new Habit();
-        newHabit.setName("Reading");
+    void testDeleteHabit() throws SQLException {
+        // Insert user
+        connection.prepareStatement("INSERT INTO domain.users (username) VALUES ('testuser');").execute();
 
-        habitRepository.save(newHabit);
+        // Given
+        Habit habit = new Habit(null, 1L, "Read", "Read daily", Frequency.DAILY, LocalDate.now());
+        habitRepository.save(habit);
 
-        assertThat(habitRepository.getHabits().size()).isEqualTo(2);
-        assertThat(habitRepository.findById(2L)).isPresent();
-        assertThat(habitRepository.findById(2L).get().getName()).isEqualTo("Reading");
+        Optional<Habit> foundHabit = habitRepository.findByName("Read", 1L);
+        assertTrue(foundHabit.isPresent());
+
+        // When
+        habitRepository.delete(foundHabit.get().getId());
+
+        // Then
+        Optional<Habit> deletedHabit = habitRepository.findByName("Read", 1L);
+        assertFalse(deletedHabit.isPresent());
     }
 
     @Test
-    @DisplayName("test deletes habit from repository")
-    void testDeleteHabit() {
-        habitRepository.delete(1L);
+    void testFindAllHabitsByUserId() throws SQLException {
+        // Insert user
+        connection.prepareStatement("INSERT INTO domain.users (username) VALUES ('testuser');").execute();
 
-        assertThat(habitRepository.getHabits().size()).isEqualTo(0);
-        assertThat(habitRepository.findById(1L)).isNotPresent();
+        // Given
+        Habit habit1 = new Habit(null, 1L, "Exercise", "Daily Exercise", Frequency.DAILY, LocalDate.now());
+        Habit habit2 = new Habit(null, 1L, "Read", "Read daily", Frequency.DAILY, LocalDate.now());
+        habitRepository.save(habit1);
+        habitRepository.save(habit2);
+
+        // When
+        Optional<ArrayList<Habit>> userHabits = habitRepository.findHabitsByUserId(1L);
+
+        // Then
+        assertTrue(userHabits.isPresent());
+        assertEquals(2, userHabits.get().size());
     }
 
     @Test
-    @DisplayName("Test finds habit by habit's name")
-    void testFindByName() {
-        Optional<Habit> foundHabit = habitRepository.findByName("Exercise", habit.getUser().getId());
+    void testAdminTableInServiceSchema() throws SQLException {
+        // Insert into the admins table in the service schema
+        connection.prepareStatement("INSERT INTO service.admins (id, email) VALUES (1, 'admin@test.com');").execute();
 
-        assertThat(foundHabit).isPresent();
-        assertThat(foundHabit.get().getName()).isEqualTo("Exercise");
-    }
+        // When
+        ResultSet resultSet = connection.prepareStatement("SELECT * FROM service.admins WHERE id = 1").executeQuery();
 
-    @Test
-    @DisplayName("delete all habits by user id")
-    void testDeleteAllByUserId() {
-        Long userId = habit.getUser().getId(); // Get the user ID for the habit
 
-        // Add a second habit for the same user
-        Habit anotherHabit = new Habit();
-        anotherHabit.setId(2L);
-        anotherHabit.setName("Meditation");
-        anotherHabit.setUser(habit.getUser()); // Set the same user
-        habitRepository.save(anotherHabit);
 
-        // Test delete all habits by user ID
-        habitRepository.deleteAllByUserId(userId);
-
-        assertThat(habitRepository.getHabits().size()).isEqualTo(0); // No habits should remain
-    }
-
-    @Test
-    @DisplayName("find habits by user id")
-    void testFindHabitsByUserId() {
-        Long userId = habit.getUser().getId(); // Get the user ID for the habit
-
-        Optional<ArrayList<Habit>> foundHabits = habitRepository.findHabitsByUserId(userId);
-
-        assertThat(foundHabits).isPresent();
-        assertThat(foundHabits.get().size()).isEqualTo(1);
-        assertThat(foundHabits.get().get(0).getName()).isEqualTo("Exercise");
-    }
-
-    @Test
-    @DisplayName("Get all habits")
-    void testGetAllHabits() {
-        Habit anotherHabit = new Habit();
-        anotherHabit.setId(2L);
-        anotherHabit.setName("Reading");
-
-        habitRepository.save(anotherHabit);
-
-        ArrayList<Habit> allHabits = habitRepository.getAll();
-
-        assertThat(allHabits.size()).isEqualTo(2);
-        assertThat(allHabits).extracting(Habit::getName).contains("Exercise", "Reading");
+        // Then
+        assertTrue(resultSet.next());
+        assertEquals("admin@test.com", resultSet.getString("email"));
     }
 }

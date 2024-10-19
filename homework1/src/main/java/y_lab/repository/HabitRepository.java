@@ -1,9 +1,7 @@
 package y_lab.repository;
 
 import y_lab.domain.Habit;
-import y_lab.domain.User;
 
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Optional;

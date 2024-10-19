@@ -1,135 +1,154 @@
 package y_lab.service.serviceImpl;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import y_lab.domain.Habit;
 import y_lab.domain.Progress;
 import y_lab.domain.User;
 import y_lab.domain.enums.Frequency;
+import y_lab.domain.enums.Role;
 import y_lab.repository.repositoryImpl.HabitRepositoryImpl;
 import y_lab.repository.repositoryImpl.ProgressRepositoryImpl;
 import y_lab.repository.repositoryImpl.UserRepositoryImpl;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.Optional;
 
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-class ProgressServiceImplTest {
+@Testcontainers
+public class ProgressServiceImplTest {
 
-    @Mock
-    private HabitRepositoryImpl habitRepository;
+    @Container
+    private PostgreSQLContainer<?> postgresContainer = new PostgreSQLContainer<>("postgres:latest")
+            .withDatabaseName("test_db")
+            .withUsername("test")
+            .withPassword("test");
 
-    @Mock
-    private UserRepositoryImpl userRepository;
-
-    @Mock
+    private Connection connection;
     private ProgressRepositoryImpl progressRepository;
-
-    @InjectMocks
     private ProgressServiceImpl progressService;
 
-    private User testUser;
-    private Habit testHabit;
-
     @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
+    public void setUp() throws SQLException {
+        connection = DriverManager.getConnection(
+                postgresContainer.getJdbcUrl(),
+                postgresContainer.getUsername(),
+                postgresContainer.getPassword()
+        );
 
-        // Initialize test data
-        testUser = new User();
-        testUser.setId(1L);
-        testUser.setName("Test User");
+        CreateSchema.createSchema(connection);
 
-        testHabit = new Habit();
-        testHabit.setId(1L);
-        testHabit.setName("Test Habit");
-        testHabit.setUser(testUser);
-        testHabit.setFrequency(Frequency.DAILY);
+        UserRepositoryImpl userRepository = new UserRepositoryImpl(connection);
+        userRepository.save(new User("test@example.com", "hashedPassword", "TestUser",false, Role.REGULAR));
+
+        HabitRepositoryImpl habitRepository = new HabitRepositoryImpl(connection);
+        habitRepository.save(new Habit(null, 1L, "sleep", "a lot", Frequency.DAILY, LocalDate.now()));
+
+
+        progressRepository = new ProgressRepositoryImpl(connection);
+        progressService = new ProgressServiceImpl(habitRepository, progressRepository, connection);
+    }
+
+    @AfterEach
+    public void tearDown() throws SQLException {
+        connection.createStatement().execute("TRUNCATE TABLE domain.progresses CASCADE;");
+        connection.createStatement().execute("TRUNCATE TABLE domain.habits CASCADE;");
+        connection.createStatement().execute("TRUNCATE TABLE domain.users CASCADE;");
+        connection.createStatement().execute("TRUNCATE TABLE service.admins CASCADE;");
+
+        connection.createStatement().execute("ALTER SEQUENCE domain.user_id_seq RESTART WITH 1;");
+        connection.createStatement().execute("ALTER SEQUENCE domain.habit_id_seq RESTART WITH 1;");
+        connection.createStatement().execute("ALTER SEQUENCE domain.progress_id_seq RESTART WITH 1;");
+
+        connection.close();
     }
 
     @Test
-    @DisplayName("Should create and save progress successfully")
-    void createProgress() {
-        // Arrange
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(habitRepository.findById(1L)).thenReturn(Optional.of(testHabit));
+    @DisplayName("Progress must be created")
+    public void CreateProgress() throws SQLException {
+        Long userId = 1L;
+        Long habitId = 1L;
 
-        // Act
-        progressService.createProgress(1L, 1L);
+        progressService.createProgress(userId, habitId);
 
-        // Assert
-        verify(progressRepository).save(any(Progress.class));
+        Optional<Progress> progress = progressRepository.findByHabitId(habitId).stream().findFirst();
+        assertTrue(progress.isPresent());
+        assertEquals(userId, progress.get().getUserId());
+        assertEquals(habitId, progress.get().getHabitId());
+        assertEquals(LocalDate.now(), progress.get().getDate());
     }
 
     @Test
-    @DisplayName("Should generate progress statistics for a given period")
-    void generateProgressStatistics() {
-        // Arrange
-        ArrayList<Progress> progressList = new ArrayList<>();
-        Progress progress = new Progress();
-        progress.setDate(LocalDate.now().minusDays(1));
-        progressList.add(progress);
+    @DisplayName("статистика должна успешно создаться")
+    public void GenerateProgressStatistics() {
+        Long userId = 1L;
+        Long habitId = 1L;
 
-        when(habitRepository.findById(anyLong())).thenReturn(Optional.of(testHabit));
-        when(progressRepository.findByHabitId(anyLong())).thenReturn(progressList);
+        progressService.createProgress(userId, habitId);
+        progressService.createProgress(userId, habitId);
 
-        // Act
-        progressService.generateProgressStatistics(1L, "week");
+        PrintStream originalOut = System.out;
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(outputStream));
 
-        // Assert
-        verify(progressRepository, times(1)).findByHabitId(1L);
+        progressService.generateProgressStatistics(habitId, "day");
+
+        String output = outputStream.toString();
+        System.setOut(originalOut);
+
+        assertTrue(output.contains("Completed: 2"));
+        assertTrue(output.contains("Completion rate: 100%"));
     }
 
     @Test
-    @DisplayName("Should calculate streak correctly")
-    void calculateStreak() {
-        // Arrange
-        ArrayList<Progress> progressList = new ArrayList<>();
-        Progress progress1 = new Progress();
-        progress1.setDate(LocalDate.now().minusDays(2));
-        Progress progress2 = new Progress();
-        progress2.setDate(LocalDate.now().minusDays(1));
-        progressList.add(progress1);
-        progressList.add(progress2);
+    @DisplayName("Подсчет повторений подряд")
+    public void CalculateStreak() throws SQLException {
+        Long userId = 1L;
+        Long habitId = 1L;
 
-        when(habitRepository.findById(anyLong())).thenReturn(Optional.of(testHabit));
-        when(progressRepository.findByHabitId(anyLong())).thenReturn(progressList);
+        progressService.createProgress(userId, habitId);
+        progressRepository.save(new Progress(null, userId, habitId, LocalDate.now().minusDays(1)));
 
-        // Act
-        progressService.calculateStreak(1L);
+        PrintStream originalOut = System.out;
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(outputStream));
 
-        // Assert
-        verify(progressRepository, times(1)).findByHabitId(1L);
+        progressService.calculateStreak(habitId);
+
+        String output = outputStream.toString();
+        System.setOut(originalOut);
+
+        assertTrue(output.contains("Current streak: 2"));
+        assertTrue(output.contains("Max streak: 2"));
     }
 
     @Test
-    @DisplayName("Should generate full report for the given period")
-    void generateReport() {
-        Habit testHabit = new Habit();
-        testHabit.setId(1L);
-        testHabit.setName("Test Habit");
-        testHabit.setFrequency(Frequency.DAILY);
+    public void GenerateReport() {
+        Long userId = 1L;
+        Long habitId = 1L;
 
-        ArrayList<Progress> progressList = new ArrayList<>();
-        Progress progress = new Progress();
-        progress.setDate(LocalDate.now().minusDays(1));
-        progressList.add(progress);
+        progressService.createProgress(userId, habitId);
 
-        when(habitRepository.findById(1L)).thenReturn(Optional.of(testHabit));
-        when(progressRepository.findByHabitId(1L)).thenReturn(progressList);
+        PrintStream originalOut = System.out;
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(outputStream));
 
-        // Act
-        progressService.generateReport(1L, "week");
+        progressService.generateReport(habitId, "day");
 
-        // Assert
-        verify(progressRepository, times(2)).findByHabitId(1L);
-        verify(habitRepository, times(2)).findById(1L);
+        String output = outputStream.toString();
+        System.setOut(originalOut);
+
+        assertTrue(output.contains("Report generated successfully."));
     }
 }

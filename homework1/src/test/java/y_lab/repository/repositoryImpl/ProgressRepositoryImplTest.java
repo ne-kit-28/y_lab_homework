@@ -1,154 +1,142 @@
 package y_lab.repository.repositoryImpl;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import y_lab.domain.Habit;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import y_lab.domain.Progress;
-import y_lab.domain.User;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("ProgressRepositoryImpl Test Suite")
-class ProgressRepositoryImplTest {
+@Testcontainers
+public class ProgressRepositoryImplTest {
 
+    @Container
+    private PostgreSQLContainer<?> postgresContainer = new PostgreSQLContainer<>("postgres:15")
+            .withDatabaseName("testdb")
+            .withUsername("testuser")
+            .withPassword("testpass");
+
+    private Connection connection;
     private ProgressRepositoryImpl progressRepository;
-    private User testUser;
-    private Habit testHabit;
 
     @BeforeEach
-    @DisplayName("Set up repository, test user, and test habit")
-    void setUp() {
-        // Create a new ProgressRepositoryImpl before each test
-        progressRepository = new ProgressRepositoryImpl("testProgress.ser");
+    void setUp() throws SQLException {
+        String jdbcUrl = postgresContainer.getJdbcUrl();
+        String username = postgresContainer.getUsername();
+        String password = postgresContainer.getPassword();
 
-        // Create a test user
-        testUser = new User();
-        testUser.setId(1L);
-        testUser.setEmail("test@example.com");
-        testUser.setName("Test User");
+        connection = DriverManager.getConnection(jdbcUrl, username, password);
+        progressRepository = new ProgressRepositoryImpl(connection);
 
-        // Create a test habit
-        testHabit = new Habit();
-        testHabit.setId(1L);
-        testHabit.setUser(testUser);
-        testHabit.setName("Test Habit");
+        // Create sequences in the domain schema
+        connection.prepareStatement(
+                "CREATE SCHEMA IF NOT EXISTS domain;" +
+                        "CREATE SEQUENCE IF NOT EXISTS domain.progress_id_seq;" +
+                        "CREATE SEQUENCE IF NOT EXISTS domain.user_id_seq;" +
+                        "CREATE SEQUENCE IF NOT EXISTS domain.habit_id_seq;"
+        ).execute();
+
+        // Create tables in the domain schema
+        connection.prepareStatement(
+                "CREATE TABLE IF NOT EXISTS domain.users (" +
+                        "id BIGINT PRIMARY KEY DEFAULT nextval('domain.user_id_seq'), " +
+                        "username VARCHAR(255));" +
+
+                        "CREATE TABLE IF NOT EXISTS domain.habits (" +
+                        "id BIGINT PRIMARY KEY DEFAULT nextval('domain.habit_id_seq'), " +
+                        "user_id BIGINT, " +
+                        "name VARCHAR(64), " +
+                        "description VARCHAR(128), " +
+                        "frequency VARCHAR(16), " +
+                        "created_at VARCHAR(32), " +
+                        "FOREIGN KEY (user_id) REFERENCES domain.users(id));" +
+
+                        "CREATE TABLE IF NOT EXISTS domain.progresses (" +
+                        "id BIGINT PRIMARY KEY DEFAULT nextval('domain.progress_id_seq'), " +
+                        "user_id BIGINT, " +
+                        "habit_id BIGINT, " +
+                        "date VARCHAR(32), " +
+                        "FOREIGN KEY (habit_id) REFERENCES domain.habits(id), " +
+                        "FOREIGN KEY (user_id) REFERENCES domain.users(id));"
+        ).execute();
+    }
+
+    @AfterEach
+    void tearDown() throws SQLException {
+        connection.prepareStatement("DROP SCHEMA IF EXISTS domain CASCADE;").execute();
+        connection.close();
     }
 
     @Test
-    @DisplayName("Save method should assign an ID and store progress")
-    void save() {
-        // Arrange
-        Progress progress = new Progress();
-        progress.setUser(testUser);
-        progress.setHabit(testHabit);
+    void testSaveAndFindById() throws SQLException {
+        // Insert user and habit
+        connection.prepareStatement("INSERT INTO domain.users (username) VALUES ('testuser');").execute();
+        connection.prepareStatement("INSERT INTO domain.habits (user_id, name, description, frequency, created_at) " +
+                "VALUES (1, 'Exercise', 'Daily Exercise', 'DAILY', '2024-10-19');").execute();
 
-        // Act
+        // Given
+        Progress progress = new Progress(null, 1L, 1L, LocalDate.now());
+
+        // When
         progressRepository.save(progress);
 
-        // Assert
-        assertThat(progress.getId()).isEqualTo(0L); // First save should have ID 0
-        assertThat(progressRepository.getProgresses()).hasSize(1);
+        // Then
+        Optional<Progress> foundProgress = progressRepository.findById(1L);
+        assertTrue(foundProgress.isPresent());
+        assertEquals(1L, foundProgress.get().getUserId());
+        assertEquals(1L, foundProgress.get().getHabitId());
+        assertEquals(LocalDate.now(), foundProgress.get().getDate());
     }
 
     @Test
-    @DisplayName("Find by ID should return progress when it exists and isEmpty if not exist")
-    void findById() {
-        // Arrange
-        Progress progress = new Progress();
-        progress.setUser(testUser);
-        progress.setHabit(testHabit);
-        progressRepository.save(progress);
+    void testDeleteAllByHabitId() throws SQLException {
+        // Insert user and habit
+        connection.prepareStatement("INSERT INTO domain.users (username) VALUES ('testuser');").execute();
+        connection.prepareStatement("INSERT INTO domain.habits (user_id, name, description, frequency, created_at) " +
+                "VALUES (1, 'Exercise', 'Daily Exercise', 'DAILY', '2024-10-19');").execute();
 
-        // Act
-        Optional<Progress> foundProgress = progressRepository.findById(0L);
-
-        // Assert
-        assertThat(foundProgress).isPresent();
-        assertThat(foundProgress.get().getUser()).isEqualTo(testUser);
-
-        // if not exist
-        Optional<Progress> foundProgress_ = progressRepository.findById(999L);
-
-        // Assert
-        assertThat(foundProgress_).isEmpty();
-    }
-
-    @Test
-    @DisplayName("Delete all by habit ID should remove all progress for the given habit")
-    void deleteAllByHabitId() {
-        // Arrange
-        Progress progress1 = new Progress();
-        progress1.setId(0L);
-        progress1.setUser(testUser);
-        progress1.setHabit(testHabit);
+        // Insert progress entries
+        Progress progress1 = new Progress(null, 1L, 1L, LocalDate.now());
+        Progress progress2 = new Progress(null, 1L, 1L, LocalDate.now().minusDays(1));
         progressRepository.save(progress1);
-
-        Progress progress2 = new Progress();
-        progress2.setId(1L);
-        progress2.setUser(testUser);
-        progress2.setHabit(testHabit);
         progressRepository.save(progress2);
 
-        // Act
-        progressRepository.deleteAllByHabitId(testHabit.getId());
+        // When
+        progressRepository.deleteAllByHabitId(1L);
 
-        // Assert
-        assertThat(progressRepository.getProgresses()).isEmpty();
+        // Then
+        ResultSet resultSet = connection.prepareStatement("SELECT * FROM domain.progresses WHERE habit_id = 1").executeQuery();
+        assertFalse(resultSet.next());
     }
 
     @Test
-    @DisplayName("Delete all by user ID should remove all progress for the given user")
-    void deleteAllByUserId() {
-        // Arrange
-        Progress progress1 = new Progress();
-        progress1.setId(0L);
-        progress1.setUser(testUser);
-        progress1.setHabit(testHabit);
+    void testFindByHabitId() throws SQLException {
+        // Insert user and habit
+        connection.prepareStatement("INSERT INTO domain.users (username) VALUES ('testuser');").execute();
+        connection.prepareStatement("INSERT INTO domain.habits (user_id, name, description, frequency, created_at) " +
+                "VALUES (1, 'Exercise', 'Daily Exercise', 'DAILY', '2024-10-19');").execute();
+
+        // Insert progress entries
+        Progress progress1 = new Progress(null, 1L, 1L, LocalDate.now());
+        Progress progress2 = new Progress(null, 1L, 1L, LocalDate.now().minusDays(1));
         progressRepository.save(progress1);
-
-        User anotherUser = new User();
-        anotherUser.setId(2L);
-        anotherUser.setEmail("another@example.com");
-        anotherUser.setName("Another User");
-
-        Progress progress2 = new Progress();
-        progress2.setId(1L);
-        progress2.setUser(anotherUser);
-        progress2.setHabit(testHabit);
         progressRepository.save(progress2);
 
-        // Act
-        progressRepository.deleteAllByUserId(testUser.getId());
+        // When
+        ArrayList<Progress> progressList = progressRepository.findByHabitId(1L);
 
-        // Assert
-        assertThat(progressRepository.getProgresses()).hasSize(1);
-        assertThat(progressRepository.getProgresses().values().iterator().next().getUser()).isEqualTo(anotherUser);
-    }
-
-    @Test
-    @DisplayName("Find by habit ID should return all progress for the given habit")
-    void findByHabitId() {
-        // Arrange
-        Progress progress1 = new Progress();
-        progress1.setId(0L);
-        progress1.setUser(testUser);
-        progress1.setHabit(testHabit);
-        progressRepository.save(progress1);
-
-        Progress progress2 = new Progress();
-        progress2.setId(1L);
-        progress2.setUser(testUser);
-        progress2.setHabit(testHabit);
-        progressRepository.save(progress2);
-
-        // Act
-        ArrayList<Progress> foundProgresses = progressRepository.findByHabitId(testHabit.getId());
-
-        // Assert
-        assertThat(foundProgresses).hasSize(2);
+        // Then
+        assertEquals(2, progressList.size());
     }
 }

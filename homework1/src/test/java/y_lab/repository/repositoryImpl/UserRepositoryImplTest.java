@@ -1,157 +1,137 @@
 package y_lab.repository.repositoryImpl;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import y_lab.domain.User;
+import y_lab.domain.enums.Role;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
-class UserRepositoryImplTest {
+@Testcontainers
+public class UserRepositoryImplTest {
 
+    @Container
+    private PostgreSQLContainer<?> postgresContainer = new PostgreSQLContainer<>("postgres:15")
+            .withDatabaseName("testdb")
+            .withUsername("testuser")
+            .withPassword("testpass");
+
+    private Connection connection;
     private UserRepositoryImpl userRepository;
 
     @BeforeEach
-    void setUp() {
-        // Create a new UserRepositoryImpl before each test
-        userRepository = new UserRepositoryImpl();
+    void setUp() throws SQLException {
+        String jdbcUrl = postgresContainer.getJdbcUrl();
+        String username = postgresContainer.getUsername();
+        String password = postgresContainer.getPassword();
+
+        connection = DriverManager.getConnection(jdbcUrl, username, password);
+        userRepository = new UserRepositoryImpl(connection);
+
+        connection.prepareStatement(
+                "CREATE SCHEMA IF NOT EXISTS domain;" +
+                        "CREATE SEQUENCE IF NOT EXISTS domain.user_id_seq;" +
+                        "CREATE TABLE IF NOT EXISTS domain.users (" +
+                        "id BIGINT PRIMARY KEY DEFAULT nextval('domain.user_id_seq'), " +
+                        "email VARCHAR(255), " +
+                        "password_hash VARCHAR(255), " +
+                        "name VARCHAR(255), " +
+                        "is_block BOOLEAN, " +
+                        "role VARCHAR(50), " +
+                        "reset_token VARCHAR(255));"
+        ).execute();
+
+        connection.prepareStatement(
+                "CREATE SCHEMA IF NOT EXISTS service;" +
+                        "CREATE TABLE IF NOT EXISTS service.admins (" +
+                        "email VARCHAR(255) PRIMARY KEY);"
+        ).execute();
+    }
+
+    @AfterEach
+    void tearDown() throws SQLException {
+        connection.prepareStatement("DROP SCHEMA IF EXISTS domain CASCADE;").execute();
+        connection.prepareStatement("DROP SCHEMA IF EXISTS service CASCADE;").execute();
+        connection.close();
     }
 
     @Test
-    @DisplayName("should assign id and store user")
-    void save() {
-        // Arrange
-        User user = new User();
-        user.setEmail("test@example.com");
-        user.setName("Test User");
+    void SaveAndFindById() throws SQLException {
+        User user = new User(null, "testuser@example.com", "hashedpassword", "Test User", false, Role.REGULAR, null);
 
-        // Act
         userRepository.save(user);
 
-        // Assert
-        assertThat(user.getId()).isEqualTo(0L); // First save should have ID 0
-        assertThat(userRepository.getUsers()).hasSize(1);
+        Optional<User> foundUser = userRepository.findById(1L);
+        assertTrue(foundUser.isPresent());
+        assertEquals("testuser@example.com", foundUser.get().getEmail());
+        assertEquals("Test User", foundUser.get().getName());
     }
 
     @Test
-    @DisplayName("should return user when user exists and should return empty when user doesn't exist")
-    void findById() {
-        // Arrange
-        User user = new User();
-        user.setEmail("test@example.com");
-        user.setName("Test User");
+    void testIsEmailExist() throws SQLException {
+        User user = new User(null, "existinguser@example.com", "hashedpassword", "Existing User", false, Role.REGULAR, null);
         userRepository.save(user);
 
-        // Act
-        Optional<User> foundUser = userRepository.findById(0L);
+        boolean emailExists = userRepository.isEmailExist("existinguser@example.com");
 
-        // Assert
-        assertThat(foundUser).isPresent();
-        assertThat(foundUser.get().getEmail()).isEqualTo("test@example.com");
-
-        Optional<User> foundUser_ = userRepository.findById(999L);
-
-        // Assert
-        assertThat(foundUser_).isEmpty();
+        assertTrue(emailExists);
     }
 
     @Test
-    @DisplayName("should return user when user exists and should return empty when user doesn't exist")
-    void findByEmail() {
-        // Arrange
-        User user = new User();
-        user.setEmail("test@example.com");
-        user.setName("Test User");
-        userRepository.save(user);
+    void testIsAdminEmail() throws SQLException {
+        connection.prepareStatement("INSERT INTO service.admins (email) VALUES ('admin@example.com');").execute();
 
-        // Act
-        Optional<User> foundUser = userRepository.findByEmail("test@example.com");
+        boolean isAdminEmail = userRepository.isAdminEmail("admin@example.com");
 
-        // Assert
-        assertThat(foundUser).isPresent();
-        assertThat(foundUser.get().getEmail()).isEqualTo("test@example.com");
-
-        Optional<User> foundUser_ = userRepository.findByEmail("notfound@example.com");
-
-        // Assert
-        assertThat(foundUser_).isEmpty();
+        assertTrue(isAdminEmail);
     }
 
     @Test
-    @DisplayName("should remove user when user exists")
-    void deleteById() {
-        // Arrange
-        User user = new User();
-        user.setEmail("test@example.com");
-        user.setName("Test User");
-        userRepository.save(user);
+    void testGetAll() throws SQLException {
+        User user1 = new User(null, "user1@example.com", "hash1", "User One", false, Role.REGULAR, null);
+        User user2 = new User(null, "user2@example.com", "hash2", "User Two", false, Role.REGULAR, null);
+        userRepository.save(user1);
+        userRepository.save(user2);
 
-        // Act
-        userRepository.deleteById(0L);
+        ArrayList<User> users = userRepository.getAll();
 
-        // Assert
-        assertThat(userRepository.getUsers()).isEmpty();
+        assertEquals(2, users.size());
     }
 
     @Test
-    @DisplayName("should modif existing user")
-    void update() {
-        // Arrange
-        User user = new User();
-        user.setEmail("test@example.com");
-        user.setName("Test User");
+    void testDeleteById() throws SQLException {
+        User user = new User(null, "user@example.com", "hash", "User", false, Role.REGULAR, null);
         userRepository.save(user);
 
-        User updatedUser = new User();
-        updatedUser.setEmail("updated@example.com");
-        updatedUser.setName("Updated User");
+        userRepository.deleteById(1L);
 
-        // Act
-        userRepository.update(0L, updatedUser);
-
-        // Assert
-        Optional<User> foundUser = userRepository.findById(0L);
-        assertThat(foundUser).isPresent();
-        assertThat(foundUser.get().getEmail()).isEqualTo("updated@example.com");
+        Optional<User> foundUser = userRepository.findById(1L);
+        assertFalse(foundUser.isPresent());
     }
 
     @Test
-    @DisplayName("should return true when email exists, should return false when email doesn't exist" +
-            ", should return true when email is admin and false if email is not exist")
-    void isEmailExist() {
-        // Arrange
-        User user = new User();
-        user.setEmail("test@example.com");
-        user.setName("Test User");
+    void testUpdate() throws SQLException {
+        User user = new User(1L, "user@example.com", "hash", "User", false, Role.REGULAR, null);
         userRepository.save(user);
 
-        // Act
-        boolean exists = userRepository.isEmailExist("test@example.com");
+        user.setName("Updated User");
+        user.setRole(Role.ADMINISTRATOR);
 
-        // Assert
-        assertThat(exists).isTrue();
+        userRepository.update(1L, user);
 
-        exists = userRepository.isEmailExist("notfound@example.com");
-
-        // Assert
-        assertThat(exists).isFalse();
-
-        ArrayList<String> admins = new ArrayList<>();
-        admins.add("admin@example.com");
-        userRepository.setAdminEmails(admins);
-
-        // Act
-        boolean isAdmin = userRepository.isAdminEmail("admin@example.com");
-
-        // Assert
-        assertThat(isAdmin).isTrue();
-
-        isAdmin = userRepository.isAdminEmail("user@example.com");
-
-        // Assert
-        assertThat(isAdmin).isFalse();
+        Optional<User> updatedUser = userRepository.findById(1L);
+        assertTrue(updatedUser.isPresent());
+        assertEquals("Updated User", updatedUser.get().getName());
+        assertEquals(Role.ADMINISTRATOR, updatedUser.get().getRole());
     }
 }

@@ -50,4 +50,8 @@ public class StartApplicationFactory {
     public void executeMigration() {
         databaseMigrator.migrate();
     }
+
+    public void closeConnection() throws SQLException {
+        connection.close();
+    }
 }

@@ -1,159 +1,138 @@
 package y_lab.service.serviceImpl;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import y_lab.domain.Habit;
 import y_lab.domain.User;
 import y_lab.domain.enums.Frequency;
+import y_lab.domain.enums.Role;
 import y_lab.repository.repositoryImpl.HabitRepositoryImpl;
 import y_lab.repository.repositoryImpl.ProgressRepositoryImpl;
 import y_lab.repository.repositoryImpl.UserRepositoryImpl;
 
-import java.time.LocalDate;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-class HabitServiceImplTest {
+@Testcontainers
+public class HabitServiceImplTest {
 
-    @Mock
+    @Container
+    private PostgreSQLContainer<?> postgresContainer = new PostgreSQLContainer<>("postgres:latest")
+            .withDatabaseName("test_db")
+            .withUsername("test")
+            .withPassword("test");
+
+    private Connection connection;
     private HabitRepositoryImpl habitRepository;
-
-    @Mock
-    private UserRepositoryImpl userRepository;
-
-    @Mock
-    private ProgressRepositoryImpl progressRepository;
-
-    @InjectMocks
     private HabitServiceImpl habitService;
 
     @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
+    public void setUp() throws SQLException {
+        connection = DriverManager.getConnection(
+                postgresContainer.getJdbcUrl(),
+                postgresContainer.getUsername(),
+                postgresContainer.getPassword()
+        );
+
+        CreateSchema.createSchema(connection);
+
+        UserRepositoryImpl userRepository = new UserRepositoryImpl(connection);
+
+        userRepository.save(new User("test@example.com", "hashedPassword", "TestUser",false, Role.REGULAR));
+        habitRepository = new HabitRepositoryImpl(connection);
+        ProgressRepositoryImpl progressRepository = new ProgressRepositoryImpl(connection);
+        habitService = new HabitServiceImpl(habitRepository, progressRepository, connection);
+    }
+
+    @AfterEach
+    public void tearDown() throws SQLException {
+        connection.createStatement().execute("TRUNCATE TABLE domain.progresses CASCADE;");
+        connection.createStatement().execute("TRUNCATE TABLE domain.habits CASCADE;");
+        connection.createStatement().execute("TRUNCATE TABLE domain.users CASCADE;");
+        connection.createStatement().execute("TRUNCATE TABLE service.admins CASCADE;");
+
+        connection.createStatement().execute("ALTER SEQUENCE domain.user_id_seq RESTART WITH 1;");
+        connection.createStatement().execute("ALTER SEQUENCE domain.habit_id_seq RESTART WITH 1;");
+        connection.createStatement().execute("ALTER SEQUENCE domain.progress_id_seq RESTART WITH 1;");
+
+        connection.close();
     }
 
     @Test
-    @DisplayName("Should create habit successfully")
-    void createHabitSuccess() {
+    @DisplayName("create habit")
+    public void CreateHabit() {
         Long userId = 1L;
-        String name = "Exercise";
-        String description = "Daily exercise";
+        String name = "Test Habit";
+        String description = "Testing habit creation";
         Frequency frequency = Frequency.DAILY;
-        User user = new User();
-
-        when(habitRepository.findByName(name, userId)).thenReturn(Optional.empty());
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
         habitService.createHabit(userId, name, description, frequency);
 
-        verify(habitRepository, times(1)).save(any(Habit.class));
-        verify(userRepository, times(1)).findById(userId);
+        ArrayList<Habit> habits = habitService.getHabits(1L, "daily");
+        assertEquals(1, habits.size());
+        assertEquals(name, habits.get(0).getName());
+        assertEquals(description, habits.get(0).getDescription());
     }
 
     @Test
-    @DisplayName("Should not create habit if name exists")
-    void createHabitNameExists() {
+    @DisplayName("test should delete habit")
+    public void DeleteHabit() {
         Long userId = 1L;
-        String name = "Exercise";
-        String description = "Daily exercise";
-        Frequency frequency = Frequency.DAILY;
-        Habit existingHabit = new Habit();
-
-        when(habitRepository.findByName(name, userId)).thenReturn(Optional.of(existingHabit));
+        String name = "Habit to delete";
+        String description = "This habit will be deleted";
+        Frequency frequency = Frequency.WEEKLY;
 
         habitService.createHabit(userId, name, description, frequency);
-
-        verify(habitRepository, never()).save(any(Habit.class));
-    }
-
-    @Test
-    @DisplayName("Should delete habit and associated progress")
-    void deleteHabitSuccess() {
-        Long habitId = 1L;
-
+        Long habitId = habitService.getHabit("Habit to delete", 1L);
         habitService.deleteHabit(habitId);
 
-        verify(habitRepository, times(1)).delete(habitId);
-        verify(progressRepository, times(1)).deleteAllByHabitId(habitId);
+        ArrayList<Habit> habits = habitService.getHabits(1L, "daily");
+        assertTrue(habits.isEmpty(), "Habit should be deleted");
     }
 
     @Test
-    @DisplayName("Should get habits sorted by created date")
-    void getHabitsSortedByCreatedDate() {
+    @DisplayName("Test should return 2 habits")
+    public void GetHabits() {
         Long userId = 1L;
-        Habit habit1 = new Habit("Habit1", "Description1", Frequency.DAILY, LocalDate.now().minusDays(1));
-        Habit habit2 = new Habit("Habit2", "Description2", Frequency.WEEKLY, LocalDate.now());
-        ArrayList<Habit> habits = new ArrayList<>();
-        habits.add(habit2);
-        habits.add(habit1);
+        habitService.createHabit(userId, "Habit 1", "Description 1", Frequency.DAILY);
+        habitService.createHabit(userId, "Habit 2", "Description 2", Frequency.WEEKLY);
 
-        when(habitRepository.findHabitsByUserId(userId)).thenReturn(Optional.of(habits));
-
-        ArrayList<Habit> result = habitService.getHabits(userId, "date");
-
-        assertThat(result).containsExactly(habit1, habit2);
+        ArrayList<Habit> habits = habitService.getHabits(userId, "daily");
+        assertEquals(2, habits.size());
     }
 
     @Test
-    @DisplayName("Should filter habits by frequency")
-    void getHabitsFilteredByFrequency() {
+    @DisplayName("Тест на обновление привычки")
+    public void UpdateHabit() throws SQLException {
         Long userId = 1L;
-        Habit habit1 = new Habit("Habit1", "Description1", Frequency.DAILY, LocalDate.now());
-        Habit habit2 = new Habit("Habit2", "Description2", Frequency.WEEKLY, LocalDate.now());
-        ArrayList<Habit> habits = new ArrayList<>();
-        habits.add(habit1);
-        habits.add(habit2);
+        String originalName = "Original Habit";
+        String originalDescription = "Original description";
+        Frequency originalFrequency = Frequency.DAILY;
 
-        when(habitRepository.findHabitsByUserId(userId)).thenReturn(Optional.of(habits));
+        habitService.createHabit(userId, originalName, originalDescription, originalFrequency);
 
-        ArrayList<Habit> result = habitService.getHabits(userId, Frequency.DAILY);
+        Long habitId = habitService.getHabit(originalName, userId);
 
-        assertThat(result).containsExactly(habit1);
-    }
-
-    @Test
-    @DisplayName("Should update habit successfully")
-    void updateHabitSuccess() {
-        Long habitId = 1L;
-        String newName = "New Habit";
-        String newDescription = "New Description";
+        String newName = "Updated Habit";
+        String newDescription = "Updated description";
         Frequency newFrequency = Frequency.WEEKLY;
-        User user = new User();
-        Habit habit = new Habit("Old Habit", "Old Description", Frequency.DAILY, LocalDate.now());
-        habit.setUser(user);
-
-        when(habitRepository.findById(habitId)).thenReturn(Optional.of(habit));
-        when(habitRepository.findByName(newName, user.getId())).thenReturn(Optional.empty());
 
         habitService.updateHabit(habitId, newName, newDescription, newFrequency);
 
-        assertThat(habit.getName()).isEqualTo(newName);
-        assertThat(habit.getDescription()).isEqualTo(newDescription);
-        assertThat(habit.getFrequency()).isEqualTo(newFrequency);
+        Habit updatedHabit = habitRepository.findById(habitId).orElseThrow();
+
+        assertEquals(newName, updatedHabit.getName(), "Habit name should be updated.");
+        assertEquals(newDescription, updatedHabit.getDescription(), "Habit description should be updated.");
+        assertEquals(newFrequency, updatedHabit.getFrequency(), "Habit frequency should be updated.");
     }
 
-    @Test
-    @DisplayName("Should not update habit if new name is already in use")
-    void updateHabitNameInUse() {
-        Long habitId = 1L;
-        String newName = "Existing Habit";
-        User user = new User();
-        Habit habit = new Habit("Old Habit", "Old Description", Frequency.DAILY, LocalDate.now());
-        habit.setUser(user);
-        Habit anotherHabit = new Habit();
-
-        when(habitRepository.findById(habitId)).thenReturn(Optional.of(habit));
-        when(habitRepository.findByName(newName, user.getId())).thenReturn(Optional.of(anotherHabit));
-
-        habitService.updateHabit(habitId, newName, null, null);
-
-        verify(habitRepository, never()).save(any(Habit.class));
-    }
 }

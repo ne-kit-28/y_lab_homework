@@ -81,7 +81,6 @@ public class ProgressServiceImpl implements ProgressService {
             LocalDate endDate = LocalDate.now();
             long totalDays = (Math.abs(ChronoUnit.DAYS.between(startDate, endDate)) + 1) / (frequency == Frequency.WEEKLY ? 7 : 1);
 
-            // Retrieve progress for the specified period
             ArrayList<Progress> progressList = progressRepository.findByHabitId(habitId);
             if (progressList.isEmpty()) {
                 System.out.println("Habit: " + habit.getName());
