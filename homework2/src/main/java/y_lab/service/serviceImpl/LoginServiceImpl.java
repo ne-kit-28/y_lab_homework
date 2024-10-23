@@ -9,7 +9,6 @@ import y_lab.util.EmailValidator;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Optional;
-import java.util.Scanner;
 import java.util.UUID;
 
 import static y_lab.util.HashFunction.hashPassword;
@@ -80,32 +79,52 @@ public class LoginServiceImpl implements LoginService {
         System.out.println("Email sent to " + email + " with " + element + token);
     }
 
-    private void resetPassword(String email, String token, String newPassword) throws SQLException {
+    @Override
+    public void resetPassword(String email, String token, String newPassword) {
 
-        Optional<User> user = userRepository.findByEmail(email);
-        if (user.isEmpty()) {
-            System.out.println("User with this email does not exist!");
-            return;
+        try {
+            connection.setAutoCommit(false);
+
+            Optional<User> user = userRepository.findByEmail(email);
+            if (user.isEmpty()) {
+                System.out.println("User with this email does not exist!");
+                return;
+            }
+
+            if (!token.equals(user.get().getResetToken())) {
+                System.out.println("Invalid token!");
+                return;
+            }
+
+            user.get().setPasswordHash(hashPassword(newPassword));
+            user.get().setResetToken(null);
+
+            userRepository.update(user.get().getId(), user.get());
+
+            sendResetEmail(user.get().getEmail(), newPassword, "new password: ");
+
+            System.out.println("Password has been successfully reset!");
+
+            connection.commit();
+        } catch (SQLException e) {
+            try {
+                connection.rollback();
+            } catch (SQLException rollbackEx) {
+                rollbackEx.printStackTrace();
+            }
+            e.printStackTrace();
+        } finally {
+            try {
+                connection.setAutoCommit(true);
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
         }
 
-        if (!token.equals(user.get().getResetToken())) {
-            System.out.println("Invalid token!");
-            return;
-        }
-
-        user.get().setPasswordHash(hashPassword(newPassword));
-        user.get().setResetToken(null);
-
-        userRepository.update(user.get().getId(), user.get());
-
-        sendResetEmail(user.get().getEmail(), newPassword, "new password: ");
-
-        System.out.println("Password has been successfully reset!");
     }
 
     @Override
     public void requestPasswordReset(String email) {
-        Scanner scanner = new Scanner(System.in);
 
         try {
             connection.setAutoCommit(false);
@@ -124,13 +143,6 @@ public class LoginServiceImpl implements LoginService {
             sendResetEmail(user.get().getEmail(), token, "reset token: ");
 
             System.out.println("Password reset token sent to your email.");
-
-            System.out.println("Enter your token:");
-            String readToken = scanner.nextLine();
-            System.out.println("Enter your new password:");
-            String password = scanner.nextLine();
-
-            resetPassword(email, readToken, password);
 
             connection.commit();
         } catch (SQLException e) {
