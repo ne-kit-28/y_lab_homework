@@ -2,7 +2,6 @@ package y_lab.service;
 
 import y_lab.domain.User;
 
-import java.sql.SQLException;
 
 /**
  * Interface representing the service for user login and registration.
@@ -12,13 +11,12 @@ public interface LoginService {
     /**
      * Logs a user in using their email and password.
      *
-     * @param email    the email of the user
-     * @param password the password of the user
+     * @param user    the user
      * @return the User object if the login is successful; User object with id = -1 otherwise
      */
-    User login(String email, String password);
+    User login(User user);
 
-    void resetPassword(String email, String token, String newPassword);
+    void resetPassword(User user);
 
     /**
      * Initiates a password reset process for the user with the specified email.
@@ -30,9 +28,7 @@ public interface LoginService {
     /**
      * Registers a new user with the specified details.
      *
-     * @param name     the name of the user
-     * @param email    the email of the user
-     * @param password the password for the user account
+     * @param user is user.
      */
-    void register(String name, String email, String password);
+    void register(User user);
 }

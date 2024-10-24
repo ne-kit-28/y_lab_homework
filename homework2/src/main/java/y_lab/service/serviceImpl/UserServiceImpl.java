@@ -33,37 +33,37 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void editUser(Long id, String newName, String newEmail, String newPassword) {
+    public void editUser(Long id, User user) {
 
         try {
             connection.setAutoCommit(false);
 
-            Optional<User> user = userRepository.findById(id);
+            Optional<User> myUser = userRepository.findById(id);
 
-            if (user.isEmpty()) {
+            if (myUser.isEmpty()) {
                 System.out.println("User with this id does not exist!");
                 return;
             }
 
             // Check for unique new email
-            if (newEmail != null && !newEmail.isEmpty() && userRepository.findByEmail(newEmail).isPresent()) {
+            if (user.getEmail() != null && !user.getEmail().isEmpty() && userRepository.findByEmail(user.getEmail()).isPresent()) {
                 System.out.println("Email already in use by another account!");
                 return;
             }
 
-            if (newEmail != null && !newEmail.isEmpty() && !EmailValidator.isValid(newEmail)) {
+            if (user.getEmail() != null && !user.getEmail().isEmpty() && !EmailValidator.isValid(user.getEmail())) {
                 System.out.println("Email is incorrect!");
                 return;
             }
 
-            if (newName != null && !newName.isEmpty())
-                user.get().setName(newName);
-            if (newEmail != null && !newEmail.isEmpty())
-                user.get().setEmail(newEmail);
-            if (newPassword != null && !newPassword.isEmpty())
-                user.get().setPasswordHash(HashFunction.hashPassword(newPassword));
+            if (user.getName() != null && !user.getName().isEmpty())
+                myUser.get().setName(user.getName());
+            if (user.getEmail() != null && !user.getEmail().isEmpty())
+                myUser.get().setEmail(user.getEmail());
+            if (user.getPasswordHash() != null && !user.getPasswordHash().isEmpty())
+                myUser.get().setPasswordHash(user.getPasswordHash());
 
-            userRepository.update(user.get().getId(), user.get());
+            userRepository.update(myUser.get().getId(), myUser.get());
             System.out.println("Profile updated successfully!");
 
             connection.commit();

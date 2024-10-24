@@ -7,6 +7,7 @@ import y_lab.service.serviceImpl.ProgressServiceImpl;
 import y_lab.util.ConsoleMessages;
 
 import java.util.ArrayList;
+import java.util.Optional;
 import java.util.Scanner;
 
 public class ConsoleHabitManagementInputAdapter {
@@ -28,7 +29,8 @@ public class ConsoleHabitManagementInputAdapter {
         String habitName;
         String description;
         String frequency;
-        Long habitId;
+        Habit myHabit;
+        Optional<Habit> habit;
         Object filter;
         ArrayList<Habit> habits;
 
@@ -43,11 +45,19 @@ public class ConsoleHabitManagementInputAdapter {
                     description = scanner.nextLine();
                     System.out.println("Enter your habit's frequency: daily or weekly");
 
+                    myHabit = Habit.builder()
+                            .name(name)
+                            .description(description)
+                            .build();
                     frequency = scanner.nextLine();
-                    if (frequency.equalsIgnoreCase("daily"))
-                        habitService.createHabit(userId, name, description, Frequency.DAILY);
-                    else if (frequency.equalsIgnoreCase("weekly"))
-                        habitService.createHabit(userId, name, description, Frequency.WEEKLY);
+                    if (frequency.equalsIgnoreCase("daily")) {
+                        myHabit.setFrequency(Frequency.DAILY);
+                        habitService.createHabit(userId, myHabit);
+                    }
+                    else if (frequency.equalsIgnoreCase("weekly")) {
+                        myHabit.setFrequency(Frequency.DAILY);
+                        habitService.createHabit(userId, myHabit);
+                    }
                     else
                         System.out.println("Incorrect input");
                     break;
@@ -55,8 +65,8 @@ public class ConsoleHabitManagementInputAdapter {
                     System.out.println("Enter your habit's name if you know (or press Enter to skip):");
                     habitName = scanner.nextLine();
                     if (!habitName.isEmpty()) {
-                        habitId = habitService.getHabit(habitName, userId);
-                        if (habitId == -1L) {
+                        habit = habitService.getHabit(habitName, userId);
+                        if (habit.isEmpty()) {
                             System.out.println("No such habit!");
                             break;
                         }
@@ -80,14 +90,14 @@ public class ConsoleHabitManagementInputAdapter {
                                 filter = " ";
                         }
 
-                        habits = habitService.getHabits(userId, filter);
+                        habits = habitService.getHabits(userId, filter); //печать реализована в сервисе
                         if (habits.isEmpty())
                             break;
                         System.out.println("Enter your habit's name if you know (or press Enter to return back):");
                         habitName = scanner.nextLine();
                         if (!habitName.isEmpty()) {
-                            habitId = habitService.getHabit(habitName, userId);
-                            if (habitId == -1L) {
+                            habit = habitService.getHabit(habitName, userId);
+                            if (habit.isEmpty()) {
                                 System.out.println("No such habit!");
                                 break;
                             }
@@ -105,33 +115,41 @@ public class ConsoleHabitManagementInputAdapter {
 
                         switch (option) {
                             case "1":
-                                progressService.createProgress(userId, habitId);
+                                progressService.createProgress(userId, habit.get().getId());
                                 break;
                             case "2":
                                 System.out.println("Enter new name (or press Enter to skip): ");
                                 name = scanner.nextLine();
-
                                 System.out.println("Enter new description (or press Enter to skip): ");
                                 description = scanner.nextLine();
 
+                                myHabit = Habit.builder()
+                                        .name(name)
+                                        .description(description)
+                                        .build();
+
                                 System.out.println("Enter new frequency: daily or weekly (or press Enter to skip): ");
                                 frequency = scanner.nextLine();
-                                if (frequency.equalsIgnoreCase("daily"))
-                                    habitService.updateHabit(habitId, name, description, Frequency.DAILY);
-                                else if (frequency.equalsIgnoreCase("weekly"))
-                                    habitService.updateHabit(habitId, name, description, Frequency.WEEKLY);
+                                if (frequency.equalsIgnoreCase("daily")) {
+                                    myHabit.setFrequency(Frequency.DAILY);
+                                    habitService.updateHabit(habit.get().getId(), myHabit);
+                                }
+                                else if (frequency.equalsIgnoreCase("weekly")) {
+                                    myHabit.setFrequency(Frequency.WEEKLY);
+                                    habitService.updateHabit(habit.get().getId(), myHabit);
+                                }
                                 else
                                     System.out.println("Incorrect input");
 
                                 break;
                             case "3":
-                                habitService.deleteHabit(habitId);
+                                habitService.deleteHabit(habit.get().getId());
                                 return;
                             case "4":
                                 consoleStatisticInputAdapter = new ConsoleStatisticInputAdapter(
                                         progressService
                                 );
-                                consoleStatisticInputAdapter.operaions(habitId);
+                                consoleStatisticInputAdapter.operaions(habit.get().getId());
                                 break;
                             case "5":
                                 return;

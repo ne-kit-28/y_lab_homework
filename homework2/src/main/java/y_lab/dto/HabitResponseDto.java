@@ -1,7 +1,6 @@
 package y_lab.dto;
 
-public record HabitDto(
-        Long userId,
+public record HabitResponseDto(
         String name,
         String description,
         String frequency,

@@ -7,6 +7,7 @@ import y_lab.service.serviceImpl.LoginServiceImpl;
 import y_lab.service.serviceImpl.ProgressServiceImpl;
 import y_lab.service.serviceImpl.UserServiceImpl;
 import y_lab.util.ConsoleMessages;
+import y_lab.util.HashFunction;
 
 import java.util.Scanner;
 
@@ -56,14 +57,21 @@ public class ConsoleUserInputAdapter {
                     email = scanner.nextLine();
                     System.out.println("Enter your password:");
                     password = scanner.nextLine();
-                    loginService.register(name, email, password);
+                    User upUser = new User();
+                    upUser.setEmail(email);
+                    upUser.setPasswordHash(HashFunction.hashPassword(password));
+                    upUser.setName(name);
+                    loginService.register(upUser);
                     break;
                 case "2":
                     System.out.println("Enter your email:");
                     email = scanner.nextLine();
                     System.out.println("Enter your password:");
                     password = scanner.nextLine();
-                    user = loginService.login(email, password);
+                    User inUser = new User();
+                    inUser.setEmail(email);
+                    inUser.setPasswordHash(HashFunction.hashPassword(password));
+                    user = loginService.login(inUser);
                     userId = user.getId();
                     if (userId != -1 && user.getRole() == Role.REGULAR) {
                         consoleLoginInputAdapter = new ConsoleLoginInputAdapter(

@@ -1,9 +1,9 @@
 package y_lab.service;
 
 import y_lab.domain.Habit;
-import y_lab.domain.enums.Frequency;
 
 import java.util.ArrayList;
+import java.util.Optional;
 
 /**
  * Interface representing the service for managing habits.
@@ -14,11 +14,9 @@ public interface HabitService {
      * Creates a new habit for a user.
      *
      * @param userId      the ID of the user creating the habit
-     * @param name        the name of the habit
-     * @param description a brief description of the habit
-     * @param frequency   the frequency of the habit (e.g., daily, weekly)
+     * @param habit       the Habit
      */
-    void createHabit(Long userId, String name, String description, Frequency frequency);
+    void createHabit(Long userId, Habit habit);
 
     /**
      * Deletes a habit by its ID.
@@ -43,15 +41,13 @@ public interface HabitService {
      * @param userId    the ID of the user
      * @return the ID of the habit if found, otherwise -1
      */
-    Long getHabit(String habitName, Long userId);
+    Optional<Habit> getHabit(String habitName, Long userId);
 
     /**
      * Updates the details of an existing habit.
      *
      * @param id             the ID of the habit to update
-     * @param newName        the new name for the habit (can be null or empty to keep the current name)
-     * @param newDescription the new description for the habit (can be null or empty to keep the current description)
-     * @param newFrequency   the new frequency for the habit (can be null to keep the current frequency)
+     * @param habit       the Habit
      */
-    void updateHabit(Long id, String newName, String newDescription, Frequency newFrequency);
+    void updateHabit(Long id, Habit habit);
 }

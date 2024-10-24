@@ -1,9 +1,11 @@
 package y_lab.in.adapter;
 
+import y_lab.domain.User;
 import y_lab.service.serviceImpl.HabitServiceImpl;
 import y_lab.service.serviceImpl.ProgressServiceImpl;
 import y_lab.service.serviceImpl.UserServiceImpl;
 import y_lab.util.ConsoleMessages;
+import y_lab.util.HashFunction;
 
 import java.util.Scanner;
 
@@ -49,7 +51,11 @@ public class ConsoleLoginInputAdapter {
 
                     System.out.println("Enter new password (or press Enter to skip): ");
                     String newPassword = scanner.nextLine();
-                    userService.editUser(userId, newName, newEmail, newPassword);
+                    User newUser = new User();
+                    newUser.setEmail(newEmail);
+                    newUser.setPasswordHash(HashFunction.hashPassword(newPassword));
+                    newUser.setName(newName);
+                    userService.editUser(userId, newUser);
                     break;
                 case "3":
                     System.out.println("are you sure you want to delete your account?");

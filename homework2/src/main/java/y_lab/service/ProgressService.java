@@ -19,14 +19,14 @@ public interface ProgressService {
      * @param habitId the ID of the habit for which to generate statistics
      * @param period  the period over which to calculate statistics (e.g., "day", "week", "month")
      */
-    void generateProgressStatistics(Long habitId, String period);
+    String generateProgressStatistics(Long habitId, String period);
 
     /**
      * Calculates and prints the current and maximum streak of habit completions for a specific habit.
      *
      * @param habitId the ID of the habit for which to calculate the streak
      */
-    void calculateStreak(Long habitId);
+    String calculateStreak(Long habitId);
 
     /**
      * Generates a report that includes progress statistics and streak information for a specific habit over a given period.
@@ -34,5 +34,5 @@ public interface ProgressService {
      * @param habitId the ID of the habit for which to generate the report
      * @param period  the period over which to generate the report (e.g., "day", "week", "month")
      */
-    void generateReport(Long habitId, String period);
+    String generateReport(Long habitId, String period);
 }

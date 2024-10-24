@@ -14,11 +14,9 @@ public interface UserService {
      * Edits the user information based on the provided parameters.
      *
      * @param id          the ID of the user to be edited
-     * @param newName     the new name of the user
-     * @param newEmail    the new email of the user
-     * @param newPassword the new password of the user
+     * @param user        the user
      */
-    void editUser(Long id, String newName, String newEmail, String newPassword);
+    void editUser(Long id, User user);
 
     /**
      * Blocks or unblocks a user based on the provided block status.
