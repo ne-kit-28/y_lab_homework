@@ -9,9 +9,8 @@ import y_lab.util.DatabaseMigrator;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Properties;
 
-public class StartApplicationFactory {
+public class StartApplicationFactory implements AutoCloseable{
     UserRepositoryImpl userRepository;
     HabitRepositoryImpl habitRepository;
     ProgressRepositoryImpl progressRepository;
@@ -51,7 +50,8 @@ public class StartApplicationFactory {
         databaseMigrator.migrate();
     }
 
-    public void closeConnection() throws SQLException {
+    @Override
+    public void close() throws Exception {
         connection.close();
     }
 }

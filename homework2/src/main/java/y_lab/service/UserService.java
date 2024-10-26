@@ -16,7 +16,7 @@ public interface UserService {
      * @param id          the ID of the user to be edited
      * @param user        the user
      */
-    void editUser(Long id, User user);
+    boolean editUser(Long id, User user);
 
     /**
      * Blocks or unblocks a user based on the provided block status.
@@ -24,14 +24,14 @@ public interface UserService {
      * @param id   the ID of the user to be blocked or unblocked
      * @param block true to block the user, false to unblock
      */
-    void blockUser(Long id, boolean block);
+    boolean blockUser(Long id, boolean block);
 
     /**
      * Deletes a user from the system based on their ID.
      *
      * @param id the ID of the user to be deleted
      */
-    void deleteUser(Long id);
+    boolean deleteUser(Long id);
 
     /**
      * Retrieves a user based on their email address.

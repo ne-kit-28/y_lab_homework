@@ -15,15 +15,17 @@ public interface HabitService {
      *
      * @param userId      the ID of the user creating the habit
      * @param habit       the Habit
+     * @return            id of habit
      */
-    void createHabit(Long userId, Habit habit);
+    Long createHabit(Long userId, Habit habit);
 
     /**
      * Deletes a habit by its ID.
      *
      * @param id the ID of the habit to be deleted
+     * @return               update or not(true/false)
      */
-    void deleteHabit(Long id);
+    boolean deleteHabit(Long id);
 
     /**
      * Retrieves a list of habits associated with a user, filtered by the specified criteria.
@@ -32,7 +34,7 @@ public interface HabitService {
      * @param filter  the filtering criteria, which can be a String (for sorting) or Frequency
      * @return a list of habits associated with the user
      */
-    ArrayList<Habit> getHabits(Long userId, Object filter);
+    ArrayList<Habit> getHabits(Long userId, String filter);
 
     /**
      * Retrieves a habit by its name for a specific user.
@@ -48,6 +50,7 @@ public interface HabitService {
      *
      * @param id             the ID of the habit to update
      * @param habit       the Habit
+     * @return               delete or not(true/false)
      */
-    void updateHabit(Long id, Habit habit);
+    boolean updateHabit(Long id, Habit habit);
 }

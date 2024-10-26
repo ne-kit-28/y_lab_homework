@@ -8,10 +8,9 @@ public interface ProgressService {
     /**
      * Creates a new progress entry for a user and a specific habit.
      *
-     * @param userId  the ID of the user who completed the habit
      * @param habitId the ID of the habit that was completed
      */
-    void createProgress(Long userId, Long habitId);
+    boolean createProgress(Long habitId);
 
     /**
      * Generates and prints progress statistics for a specific habit over a given period.

@@ -33,7 +33,9 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void editUser(Long id, User user) {
+    public boolean editUser(Long id, User user) {
+
+        boolean edit = false;
 
         try {
             connection.setAutoCommit(false);
@@ -42,18 +44,18 @@ public class UserServiceImpl implements UserService {
 
             if (myUser.isEmpty()) {
                 System.out.println("User with this id does not exist!");
-                return;
+                return false;
             }
 
             // Check for unique new email
             if (user.getEmail() != null && !user.getEmail().isEmpty() && userRepository.findByEmail(user.getEmail()).isPresent()) {
                 System.out.println("Email already in use by another account!");
-                return;
+                return false;
             }
 
             if (user.getEmail() != null && !user.getEmail().isEmpty() && !EmailValidator.isValid(user.getEmail())) {
                 System.out.println("Email is incorrect!");
-                return;
+                return false;
             }
 
             if (user.getName() != null && !user.getName().isEmpty())
@@ -64,9 +66,11 @@ public class UserServiceImpl implements UserService {
                 myUser.get().setPasswordHash(user.getPasswordHash());
 
             userRepository.update(myUser.get().getId(), myUser.get());
-            System.out.println("Profile updated successfully!");
 
             connection.commit();
+
+            System.out.println("Profile updated successfully!");
+            edit = true;
         } catch (SQLException e) {
             try {
                 connection.rollback();
@@ -81,16 +85,19 @@ public class UserServiceImpl implements UserService {
                 ex.printStackTrace();
             }
         }
+        return edit;
     }
 
     @Override
-    public void blockUser(Long id, boolean block) {
+    public boolean blockUser(Long id, boolean block) {
+
+        boolean edit = false;
 
         try {
             connection.setAutoCommit(false);
 
             if (id == null) {
-                throw new IllegalArgumentException("User ID cannot be null.");
+                return false;
             }
 
             User user = userRepository.findById(id)
@@ -99,9 +106,11 @@ public class UserServiceImpl implements UserService {
             user.setBlock(block);
 
             userRepository.update(user.getId(), user);
-            System.out.println("Profile block is " + user.isBlock());
 
             connection.commit();
+
+            System.out.println("Profile block is " + user.isBlock());
+            edit = true;
         } catch (SQLException e) {
             try {
                 connection.rollback();
@@ -116,10 +125,13 @@ public class UserServiceImpl implements UserService {
                 ex.printStackTrace();
             }
         }
+        return edit;
     }
 
     @Override
-    public void deleteUser(Long id) {
+    public boolean deleteUser(Long id) {
+
+        boolean edit = false;
 
         try {
             connection.setAutoCommit(false);
@@ -127,9 +139,11 @@ public class UserServiceImpl implements UserService {
             userRepository.deleteById(id);
             habitRepository.deleteAllByUserId(id);
             progressRepository.deleteAllByUserId(id);
-            System.out.println("User and all habits were deleted!");
 
             connection.commit();
+
+            System.out.println("User and all habits were deleted!");
+            edit = true;
         } catch (SQLException e) {
             try {
                 connection.rollback();
@@ -144,6 +158,7 @@ public class UserServiceImpl implements UserService {
                 ex.printStackTrace();
             }
         }
+        return edit;
     }
 
     @Override

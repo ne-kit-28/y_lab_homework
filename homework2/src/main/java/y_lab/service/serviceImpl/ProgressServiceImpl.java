@@ -15,6 +15,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 public class ProgressServiceImpl implements ProgressService {
     private final HabitRepositoryImpl habitRepository;
@@ -41,19 +42,25 @@ public class ProgressServiceImpl implements ProgressService {
     }
 
     @Override
-    public void createProgress(Long userId, Long habitId) {
+    public boolean createProgress(Long habitId) {
         try {
             connection.setAutoCommit(false);
 
+            Optional<Habit> habit = habitRepository.findById(habitId);
+            if (habit.isEmpty())
+                return false;
+
             Progress progress = Progress.builder()
-                    .userId(userId)
+                    .userId(habit.get().getUserId())
                     .habitId(habitId)
                     .date(LocalDate.now())
                     .build();
             progressRepository.save(progress);
-            System.out.println("The habit is complete");
 
             connection.commit();
+
+            System.out.println("The habit is complete");
+            return true;
         } catch (SQLException e) {
             try {
                 connection.rollback();
@@ -68,6 +75,7 @@ public class ProgressServiceImpl implements ProgressService {
                 ex.printStackTrace();
             }
         }
+        return false;
     }
 
     @Override
@@ -108,7 +116,9 @@ public class ProgressServiceImpl implements ProgressService {
 
             System.out.println(returnStr);
         } catch (SQLException e) {
-            System.out.println("Sql error in generateProgressStatistic");
+            returnStr = "Sql error in generateProgressStatistic";
+        } catch (NoSuchElementException e) {
+            returnStr = "no habit with such id";
         }
         return returnStr;
     }
@@ -154,7 +164,9 @@ public class ProgressServiceImpl implements ProgressService {
 
             System.out.println(returnStr);
         } catch (SQLException e) {
-            System.out.println("Sql error in calculateStreak");
+            returnStr = "Sql error in calculateStreak";
+        } catch (NoSuchElementException e) {
+            returnStr = "no habit with such id";
         }
         return  returnStr;
     }
@@ -167,6 +179,7 @@ public class ProgressServiceImpl implements ProgressService {
         // Calculate streak
         String streak = this.calculateStreak(habitId);
 
-        return (statistic + '\n' + streak + "\nReport generated successfully.");
+        System.out.println(statistic + '\n' + streak);
+        return (statistic + '\n' + streak);
     }
 }

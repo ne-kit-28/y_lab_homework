@@ -8,8 +8,10 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import y_lab.domain.User;
+import y_lab.dto.LoginResponseDto;
 import y_lab.repository.UserRepository;
 import y_lab.repository.repositoryImpl.UserRepositoryImpl;
+import y_lab.util.HashFunction;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -58,30 +60,49 @@ public class LoginServiceImplTest {
     @DisplayName("login and registration")
     public void Login() {
 
-        loginService.register("John Doe", "john.doe@example.com", "password123");
+        User user = User.builder()
+                .name("John Doe")
+                .email("john.doe@example.com")
+                .passwordHash(HashFunction.hashPassword("password123"))
+                .build();
 
-        User loggedInUser = loginService.login("john.doe@example.com", "password123");
+        loginService.register(user);
+
+        LoginResponseDto loggedInUser = loginService.login(user);
 
         assertThat(loggedInUser).isNotNull();
-        assertThat(loggedInUser.getEmail()).isEqualTo("john.doe@example.com");
-        assertThat(loggedInUser.getName()).isEqualTo("John Doe");
+        assertThat(loggedInUser.email()).isEqualTo("john.doe@example.com");
+        assertThat(loggedInUser.message()).isEqualTo("Successful!");
     }
 
     @Test
     @DisplayName("несуществующий логин")
     public void testLoginInvalidEmail() {
-        User loggedInUser = loginService.login("invalidemail@example.com", "password123");
+        User user = User.builder()
+                .email("invalidemail@example.com")
+                .passwordHash(HashFunction.hashPassword("password123"))
+                .build();
 
-        assertThat(loggedInUser.getId()).isEqualTo(-1L);
+        LoginResponseDto loggedInUser = loginService.login(user);
+
+        assertThat(loggedInUser.id()).isEqualTo(-1L);
     }
 
     @Test
     @DisplayName("false при неверном пароле")
     public void testLoginIncorrectPassword() throws SQLException {
-        loginService.register("Petr", "petr@ya.com", "password123");
+        User user = User.builder()
+                .name("Petr")
+                .email("petr@ya.com")
+                .passwordHash(HashFunction.hashPassword("password123"))
+                .build();
 
-        User loggedInUser = loginService.login("petr@ya.com", "wrongpassword");
+        loginService.register(user);
 
-        assertThat(loggedInUser.getId()).isEqualTo(-1L);
+        user.setPasswordHash(HashFunction.hashPassword("wrongpassword"));
+
+        LoginResponseDto loggedInUser = loginService.login(user);
+
+        assertThat(loggedInUser.id()).isEqualTo(-1L);
     }
 }

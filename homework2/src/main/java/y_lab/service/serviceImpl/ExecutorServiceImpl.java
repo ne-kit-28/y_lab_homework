@@ -16,7 +16,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class ExecutorServiceImpl implements ExecutorService {
+public class ExecutorServiceImpl implements ExecutorService, AutoCloseable {
 
     private final HabitRepositoryImpl habitRepository;
     private final UserRepositoryImpl userRepository;
@@ -58,5 +58,10 @@ public class ExecutorServiceImpl implements ExecutorService {
             scheduler.shutdownNow(); // Immediate shutdown on interruption
             Thread.currentThread().interrupt(); // Restore interruption flag
         }
+    }
+
+    @Override
+    public void close() throws Exception {
+        stopScheduler();
     }
 }

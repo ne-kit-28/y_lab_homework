@@ -19,6 +19,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -74,8 +75,13 @@ public class HabitServiceImplTest {
         String name = "Test Habit";
         String description = "Testing habit creation";
         Frequency frequency = Frequency.DAILY;
+        Habit habit = Habit.builder()
+                .name(name)
+                .description(description)
+                .frequency(frequency)
+                .build();
 
-        habitService.createHabit(userId, name, description, frequency);
+        habitService.createHabit(userId, habit);
 
         ArrayList<Habit> habits = habitService.getHabits(1L, "daily");
         assertEquals(1, habits.size());
@@ -91,9 +97,15 @@ public class HabitServiceImplTest {
         String description = "This habit will be deleted";
         Frequency frequency = Frequency.WEEKLY;
 
-        habitService.createHabit(userId, name, description, frequency);
-        Long habitId = habitService.getHabit("Habit to delete", 1L);
-        habitService.deleteHabit(habitId);
+        Habit habit = Habit.builder()
+                .name(name)
+                .description(description)
+                .frequency(frequency)
+                .build();
+
+        habitService.createHabit(userId, habit);
+        Optional<Habit> opHabit = habitService.getHabit("Habit to delete", 1L);
+        habitService.deleteHabit(opHabit.get().getId());
 
         ArrayList<Habit> habits = habitService.getHabits(1L, "daily");
         assertTrue(habits.isEmpty(), "Habit should be deleted");
@@ -103,8 +115,17 @@ public class HabitServiceImplTest {
     @DisplayName("Test should return 2 habits")
     public void GetHabits() {
         Long userId = 1L;
-        habitService.createHabit(userId, "Habit 1", "Description 1", Frequency.DAILY);
-        habitService.createHabit(userId, "Habit 2", "Description 2", Frequency.WEEKLY);
+
+        habitService.createHabit(userId, Habit.builder()
+                .name("Habit 1")
+                .description("Description 1")
+                .frequency(Frequency.DAILY)
+                .build());
+        habitService.createHabit(userId, Habit.builder()
+                .name("Habit 2")
+                .description("Description 2")
+                .frequency(Frequency.DAILY)
+                .build());
 
         ArrayList<Habit> habits = habitService.getHabits(userId, "daily");
         assertEquals(2, habits.size());
@@ -118,17 +139,29 @@ public class HabitServiceImplTest {
         String originalDescription = "Original description";
         Frequency originalFrequency = Frequency.DAILY;
 
-        habitService.createHabit(userId, originalName, originalDescription, originalFrequency);
+        Habit oldHabit = Habit.builder()
+                .name(originalName)
+                .description(originalDescription)
+                .frequency(originalFrequency)
+                .build();
 
-        Long habitId = habitService.getHabit(originalName, userId);
+        habitService.createHabit(userId, oldHabit);
+
+        Optional<Habit> opHabit = habitService.getHabit(originalName, userId);
 
         String newName = "Updated Habit";
         String newDescription = "Updated description";
         Frequency newFrequency = Frequency.WEEKLY;
 
-        habitService.updateHabit(habitId, newName, newDescription, newFrequency);
+        Habit newHabit = Habit.builder()
+                .name(newName)
+                .description(newDescription)
+                .frequency(newFrequency)
+                .build();
 
-        Habit updatedHabit = habitRepository.findById(habitId).orElseThrow();
+        habitService.updateHabit(opHabit.get().getId(), newHabit);
+
+        Habit updatedHabit = habitRepository.findById(opHabit.get().getId()).orElseThrow();
 
         assertEquals(newName, updatedHabit.getName(), "Habit name should be updated.");
         assertEquals(newDescription, updatedHabit.getDescription(), "Habit description should be updated.");

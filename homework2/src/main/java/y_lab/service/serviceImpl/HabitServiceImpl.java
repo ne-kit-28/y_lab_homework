@@ -30,7 +30,9 @@ public class HabitServiceImpl implements HabitService {
     }
 
     @Override
-    public void createHabit(Long userId, Habit habit) {
+    public Long createHabit(Long userId, Habit habit) {
+
+        Long habitId = -1L;
 
         try {
             connection.setAutoCommit(false);
@@ -42,6 +44,7 @@ public class HabitServiceImpl implements HabitService {
                 habit.setCreatedAt(LocalDate.now());
                 habit.setUserId(userId);
                 habitRepository.save(habit);
+                habitId = habitRepository.findByName(habit.getName(), userId).get().getId();
                 System.out.println("Habit " + habit.getName() + " is created!");
             }
 
@@ -60,10 +63,14 @@ public class HabitServiceImpl implements HabitService {
                 ex.printStackTrace();
             }
         }
+        return habitId;
     }
 
     @Override
-    public void deleteHabit(Long id) {
+    public boolean deleteHabit(Long id) {
+
+        boolean del = false;
+
         try {
             connection.setAutoCommit(false);
 
@@ -72,6 +79,7 @@ public class HabitServiceImpl implements HabitService {
             System.out.println("Habit with id: " + id + " was deleted!");
 
             connection.commit();
+            del = true;
         } catch (SQLException e) {
             try {
                 connection.rollback();
@@ -86,10 +94,11 @@ public class HabitServiceImpl implements HabitService {
                 ex.printStackTrace();
             }
         }
+        return del;
     }
 
     @Override
-    public ArrayList<Habit> getHabits(Long userId, Object filter) {
+    public ArrayList<Habit> getHabits(Long userId, String filter) {
 
         ArrayList<Habit> habits = new ArrayList<>();
 
@@ -98,15 +107,18 @@ public class HabitServiceImpl implements HabitService {
 
             habits = habitRepository.findHabitsByUserId(userId).orElseThrow(NoSuchElementException::new);
 
-            if (filter instanceof String) {
+            if (filter.equalsIgnoreCase("weekly")) {
+                habits = new ArrayList<>(habits.stream()
+                        .filter(habit -> habit.getFrequency().equals(Frequency.WEEKLY))
+                        .toList());
+            } else if (filter.equalsIgnoreCase("daily")) {
+                habits = new ArrayList<>(habits.stream()
+                        .filter(habit -> habit.getFrequency().equals(Frequency.DAILY))
+                        .toList());
+            } else
                 habits = new ArrayList<>(habits.stream()
                         .sorted(Comparator.comparing(Habit::getCreatedAt))
                         .toList());
-            } else if (filter instanceof Frequency instanceFilter) {
-                habits = new ArrayList<>(habits.stream()
-                        .filter(habit -> habit.getFrequency().equals(instanceFilter))
-                        .toList());
-            }
 
             if (habits.isEmpty()) {
                 System.out.println("No habits");
@@ -173,7 +185,9 @@ public class HabitServiceImpl implements HabitService {
     }
 
     @Override
-    public void updateHabit(Long id, Habit newHabit) {
+    public boolean updateHabit(Long id, Habit newHabit) {
+
+        boolean upd = false;
 
         try {
             connection.setAutoCommit(false);
@@ -182,13 +196,13 @@ public class HabitServiceImpl implements HabitService {
 
             if (habit.isEmpty()) {
                 System.out.println("Habit with this id does not exist!");
-                throw new SQLException();
+                return false;
             }
 
             // Check for the uniqueness of the new name
             if (newHabit.getName() != null && !newHabit.getName().isEmpty() && habitRepository.findByName(newHabit.getName(), habit.get().getUserId()).isPresent()) {
                 System.out.println("Name already in use by another account!");
-                throw new SQLException();
+                return false;
             }
 
             if (newHabit.getName() != null && !newHabit.getName().isEmpty()) {
@@ -205,6 +219,7 @@ public class HabitServiceImpl implements HabitService {
             System.out.println("Habit updated successfully!");
 
             connection.commit();
+            upd = true;
         } catch (SQLException e) {
             try {
                 connection.rollback();
@@ -219,5 +234,6 @@ public class HabitServiceImpl implements HabitService {
                 ex.printStackTrace();
             }
         }
+        return upd;
     }
 }

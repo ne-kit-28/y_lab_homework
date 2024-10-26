@@ -2,16 +2,16 @@ package y_lab.service.serviceImpl;
 
 import y_lab.domain.User;
 import y_lab.domain.enums.Role;
+import y_lab.dto.LoginResponseDto;
 import y_lab.repository.UserRepository;
 import y_lab.service.LoginService;
 import y_lab.util.EmailValidator;
+import y_lab.util.HashFunction;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Optional;
 import java.util.UUID;
-
-import static y_lab.util.HashFunction.hashPassword;
 
 public class LoginServiceImpl implements LoginService {
     private final UserRepository userRepository;
@@ -23,10 +23,7 @@ public class LoginServiceImpl implements LoginService {
     }
 
     @Override
-    public User login(User user) {
-
-        User user_ = new User();
-        user_.setId(-1L);
+    public LoginResponseDto login(User user) {
 
         try {
             connection.setAutoCommit(false);
@@ -34,23 +31,23 @@ public class LoginServiceImpl implements LoginService {
             Optional<User> newUser = userRepository.findByEmail(user.getEmail());
             if (newUser.isEmpty()) {
                 System.out.println("User with this email does not exist!");
-                return user_;
+                return new LoginResponseDto(-1L, user.getEmail(), "", "User with this email does not exist!");
             }
 
             if (!newUser.get().getPasswordHash().equals(user.getPasswordHash())) {
                 System.out.println("Incorrect password!");
-                return user_;
+                return new LoginResponseDto(-1L, user.getEmail(), "", "Incorrect password!");
             }
 
             if (newUser.get().isBlock()) {
                 System.out.println("Your account is blocked!");
-                return user_;
+                return new LoginResponseDto(-1L, user.getEmail(), "", "Your account is blocked!");
             }
 
             connection.commit();
 
             System.out.println("Login successful! Welcome, " + newUser.get().getName());
-            return newUser.get();
+            return new LoginResponseDto(newUser.get().getId(), user.getEmail(), "", "Successful!");
 
         } catch (SQLException e) {
             try {
@@ -67,7 +64,7 @@ public class LoginServiceImpl implements LoginService {
                 ex.printStackTrace();
             }
         }
-        return user_;
+        return new LoginResponseDto(-1L, user.getEmail(), "", "SQL error in loginService");
     }
 
     private String generateResetToken() {
@@ -80,7 +77,10 @@ public class LoginServiceImpl implements LoginService {
     }
 
     @Override
-    public void resetPassword(User user) {
+    public LoginResponseDto resetPassword(User user) {
+
+        String password = user.getPasswordHash();
+        user.setPasswordHash(HashFunction.hashPassword(user.getPasswordHash()));
 
         try {
             connection.setAutoCommit(false);
@@ -88,12 +88,12 @@ public class LoginServiceImpl implements LoginService {
             Optional<User> newUser = userRepository.findByEmail(user.getEmail());
             if (newUser.isEmpty()) {
                 System.out.println("User with this email does not exist!");
-                return;
+                return new LoginResponseDto(-1L, user.getEmail(), "", "User with this email does not exist!");
             }
 
             if (!user.getResetToken().equals(newUser.get().getResetToken())) {
                 System.out.println("Invalid resetToken!");
-                return;
+                return new LoginResponseDto(-1L, user.getEmail(), "", "Invalid resetToken!");
             }
 
             newUser.get().setPasswordHash(user.getPasswordHash());
@@ -101,11 +101,12 @@ public class LoginServiceImpl implements LoginService {
 
             userRepository.update(newUser.get().getId(), newUser.get());
 
-            sendResetEmail(newUser.get().getEmail(), user.getPasswordHash(), "new passwordHash: ");
-
-            System.out.println("Password has been successfully reset!");
+            sendResetEmail(newUser.get().getEmail(), password, "new password: ");
 
             connection.commit();
+
+            System.out.println("Password has been successfully reset!");
+            return new LoginResponseDto(newUser.get().getId(), user.getEmail(), password, "Successful!");
         } catch (SQLException e) {
             try {
                 connection.rollback();
@@ -120,11 +121,13 @@ public class LoginServiceImpl implements LoginService {
                 ex.printStackTrace();
             }
         }
-
+        return new LoginResponseDto(-1L, user.getEmail(), "", "sql error");
     }
 
     @Override
-    public void requestPasswordReset(String email) {
+    public boolean requestPasswordReset(String email) {
+
+        boolean res = false;
 
         try {
             connection.setAutoCommit(false);
@@ -132,7 +135,7 @@ public class LoginServiceImpl implements LoginService {
             Optional<User> user = userRepository.findByEmail(email);
             if (user.isEmpty()) {
                 System.out.println("User with this email does not exist!");
-                return;
+                return false;
             }
 
             String token = generateResetToken();
@@ -142,9 +145,11 @@ public class LoginServiceImpl implements LoginService {
 
             sendResetEmail(user.get().getEmail(), token, "reset resetToken: ");
 
-            System.out.println("Password reset resetToken sent to your email.");
-
             connection.commit();
+
+
+            System.out.println("Password reset resetToken sent to your email.");
+            res = true;
         } catch (SQLException e) {
             try {
                 connection.rollback();
@@ -159,10 +164,11 @@ public class LoginServiceImpl implements LoginService {
                 ex.printStackTrace();
             }
         }
+        return res;
     }
 
     @Override
-    public void register(User user) {
+    public LoginResponseDto register(User user) {
 
         Role role;
 
@@ -171,12 +177,12 @@ public class LoginServiceImpl implements LoginService {
 
             if (!EmailValidator.isValid(user.getEmail())) {
                 System.out.println("Email is incorrect!");
-                return;
+                return new LoginResponseDto(-1L, user.getEmail(), "", "Email is incorrect!");
             }
 
             if (userRepository.isEmailExist(user.getEmail())) {
                 System.out.println("User with this email already exists!");
-                return;
+                return new LoginResponseDto(-1L, user.getEmail(), "", "User with this email already exists!");
             }
 
             if (userRepository.isAdminEmail(user.getEmail())) {
@@ -189,9 +195,12 @@ public class LoginServiceImpl implements LoginService {
 
             userRepository.save(regUser);
 
-            System.out.println("Registration successful!");
+            regUser = userRepository.findByEmail(user.getEmail()).get();
 
             connection.commit();
+
+            System.out.println("Registration successful!");
+            return new LoginResponseDto(regUser.getId(), regUser.getEmail(), "", "Successful!");
         } catch (SQLException e) {
             try {
                 connection.rollback();
@@ -206,5 +215,6 @@ public class LoginServiceImpl implements LoginService {
                 ex.printStackTrace();
             }
         }
+        return new LoginResponseDto(-1L, user.getEmail(), "", "sql error");
     }
 }

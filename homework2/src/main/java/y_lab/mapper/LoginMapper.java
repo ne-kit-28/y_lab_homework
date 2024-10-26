@@ -13,6 +13,6 @@ public interface LoginMapper {
     User loginInDtoToUser(LoginInDto loginUpDto);
     @Mapping(target = "passwordHash", expression = "java(HashFunction.hashPassword(loginUpDto.password()))")
     User loginUpDtoToUser(LoginUpDto loginUpDto);
-    @Mapping(target = "passwordHash", expression = "java(HashFunction.hashPassword(loginResetDto.password()))")
+    @Mapping(target = "passwordHash", expression = "java(loginResetDto.password())")
     User loginResetDtoToUser(LoginResetDto loginResetDto);
 }
