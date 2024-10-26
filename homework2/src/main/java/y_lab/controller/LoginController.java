@@ -13,6 +13,7 @@ import y_lab.dto.LoginUpDto;
 import y_lab.mapper.LoginMapper;
 import y_lab.mapper.LoginMapperImpl;
 import y_lab.service.serviceImpl.LoginServiceImpl;
+import y_lab.util.DtoValidator;
 import y_lab.util.JwtUtil;
 
 import java.io.BufferedReader;
@@ -57,18 +58,25 @@ public class LoginController extends HttpServlet {
             ObjectMapper objectMapper = new ObjectMapper();
             LoginInDto loginInDto = objectMapper.readValue(json, LoginInDto.class);
 
-            LoginResponseDto loginResponseDto = loginService.login(loginMapper.loginInDtoToUser(loginInDto));
+            try {
+                DtoValidator.validate(loginInDto);
 
-            if (loginResponseDto.id() != -1L) {
-                String token = JwtUtil.generateToken(loginResponseDto.id(), loginResponseDto.role());
-                resp.setHeader("Authorization", "Bearer " + token);
+                LoginResponseDto loginResponseDto = loginService.login(loginMapper.loginInDtoToUser(loginInDto));
 
-                resp.setStatus(HttpServletResponse.SC_OK); //200 ok
-                PrintWriter out = resp.getWriter();
-                out.print(loginResponseDto.id()); // Отправляем id
-                out.flush();
-            } else {
-                resp.sendError(HttpServletResponse.SC_CONFLICT, loginResponseDto.message());
+                if (loginResponseDto.id() != -1L) {
+                    String token = JwtUtil.generateToken(loginResponseDto.id(), loginResponseDto.role());
+                    resp.setHeader("Authorization", "Bearer " + token);
+
+                    resp.setStatus(HttpServletResponse.SC_OK); //200 ok
+                    PrintWriter out = resp.getWriter();
+                    out.print(loginResponseDto.id()); // Отправляем id
+                    out.flush();
+                } else {
+                    resp.sendError(HttpServletResponse.SC_CONFLICT, loginResponseDto.message());
+                }
+            } catch (IllegalArgumentException e) {
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                resp.getWriter().write("{\"error\":\"" + e.getMessage() + "\"}");
             }
 
         } else if ("/api/login/signUp".equals(req.getServletPath())) { // Проверка, что userId содержит Id
@@ -86,20 +94,27 @@ public class LoginController extends HttpServlet {
             ObjectMapper objectMapper = new ObjectMapper();
             LoginUpDto loginUpDto = objectMapper.readValue(json, LoginUpDto.class);
 
-            LoginResponseDto loginResponseDto = loginService.register(loginMapper.loginUpDtoToUser(loginUpDto));
+            try {
+                DtoValidator.validate(loginUpDto);
 
-            if (loginResponseDto.id() != -1L) {
-                resp.setStatus(HttpServletResponse.SC_CREATED); //201 created
-                PrintWriter out = resp.getWriter();
+                LoginResponseDto loginResponseDto = loginService.register(loginMapper.loginUpDtoToUser(loginUpDto));
 
-                String jsonResponse = objectMapper.writeValueAsString(loginResponseDto);
+                if (loginResponseDto.id() != -1L) {
+                    resp.setStatus(HttpServletResponse.SC_CREATED); //201 created
+                    PrintWriter out = resp.getWriter();
 
-                out.print(jsonResponse); // Отправляем responseDto
-                out.flush();
-            } else {
-                resp.sendError(HttpServletResponse.SC_CONFLICT, loginResponseDto.message());
+                    String jsonResponse = objectMapper.writeValueAsString(loginResponseDto);
+
+                    out.print(jsonResponse);
+                    out.flush();
+                } else {
+                    resp.sendError(HttpServletResponse.SC_CONFLICT, loginResponseDto.message());
+                }
+
+            } catch (IllegalArgumentException e) {
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                resp.getWriter().write("{\"error\":\"" + e.getMessage() + "\"}");
             }
-
         } else if ("/api/login/password/request".equals(req.getServletPath())) {
             String email = req.getParameter("email");
 
@@ -129,19 +144,26 @@ public class LoginController extends HttpServlet {
             ObjectMapper objectMapper = new ObjectMapper();
             LoginResetDto loginResetDto = objectMapper.readValue(json, LoginResetDto.class);
 
-            LoginResponseDto res = loginService.resetPassword(loginMapper.loginResetDtoToUser(loginResetDto));
+            try {
+                DtoValidator.validate(loginResetDto);
 
-            if (res.id() != -1L){
-                resp.setStatus(HttpServletResponse.SC_CREATED); //201 Created
-                PrintWriter out = resp.getWriter();
+                LoginResponseDto res = loginService.resetPassword(loginMapper.loginResetDtoToUser(loginResetDto));
 
-                String jsonResponse = objectMapper.writeValueAsString(res);
+                if (res.id() != -1L){
+                    resp.setStatus(HttpServletResponse.SC_CREATED); //201 Created
+                    PrintWriter out = resp.getWriter();
 
-                out.print(jsonResponse); // Отправляем id
-                out.flush();
-            } else
-                resp.sendError(HttpServletResponse.SC_CONFLICT, res.message());
+                    String jsonResponse = objectMapper.writeValueAsString(res);
 
+                    out.print(jsonResponse); // Отправляем id
+                    out.flush();
+                } else
+                    resp.sendError(HttpServletResponse.SC_CONFLICT, res.message());
+
+            } catch (IllegalArgumentException e) {
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                resp.getWriter().write("{\"error\":\"" + e.getMessage() + "\"}");
+            }
         }else {
             resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Path not found");
         }

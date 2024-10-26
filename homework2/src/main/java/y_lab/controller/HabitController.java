@@ -11,6 +11,7 @@ import y_lab.dto.HabitRequestDto;
 import y_lab.mapper.HabitMapper;
 import y_lab.mapper.HabitMapperImpl;
 import y_lab.service.serviceImpl.HabitServiceImpl;
+import y_lab.util.DtoValidator;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -90,15 +91,23 @@ public class HabitController extends HttpServlet {
         ObjectMapper objectMapper = new ObjectMapper();
         HabitRequestDto habitRequestDto = objectMapper.readValue(json, HabitRequestDto.class);
 
-        Long habitId = habitService.createHabit(userId, habitMapper.habitRequestDtoToHabit(habitRequestDto));
+        try {
+            DtoValidator.validate(habitRequestDto);
 
-        if (habitId != -1L) {
-            resp.setStatus(HttpServletResponse.SC_CREATED); //201 Created
-            PrintWriter out = resp.getWriter();
-            out.print(habitId); // Отправляем id
-            out.flush();
-        } else {
-            resp.sendError(HttpServletResponse.SC_CONFLICT, "Habit with such name is exist");
+            Long habitId = habitService.createHabit(userId, habitMapper.habitRequestDtoToHabit(habitRequestDto));
+
+            if (habitId != -1L) {
+                resp.setStatus(HttpServletResponse.SC_CREATED); //201 Created
+                PrintWriter out = resp.getWriter();
+                out.print(habitId); // Отправляем id
+                out.flush();
+            } else {
+                resp.sendError(HttpServletResponse.SC_CONFLICT, "Habit with such name is exist");
+            }
+
+        } catch (IllegalArgumentException e) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            resp.getWriter().write("{\"error\":\"" + e.getMessage() + "\"}");
         }
     }
 
@@ -123,16 +132,23 @@ public class HabitController extends HttpServlet {
         ObjectMapper objectMapper = new ObjectMapper();
         HabitRequestDto habitRequestDto = objectMapper.readValue(json, HabitRequestDto.class);
 
+        try {
+            DtoValidator.validate(habitRequestDto);
 
-        boolean upd = habitService.updateHabit(habitId, habitMapper.habitRequestDtoToHabit(habitRequestDto));
+            boolean upd = habitService.updateHabit(habitId, habitMapper.habitRequestDtoToHabit(habitRequestDto));
 
-        if (upd) {
-            resp.setStatus(HttpServletResponse.SC_OK); //200 ok
-            PrintWriter out = resp.getWriter();
-            out.print(true);
-            out.flush();
-        } else {
-            resp.sendError(HttpServletResponse.SC_CONFLICT, "Habit was not update");
+            if (upd) {
+                resp.setStatus(HttpServletResponse.SC_OK); //200 ok
+                PrintWriter out = resp.getWriter();
+                out.print(true);
+                out.flush();
+            } else {
+                resp.sendError(HttpServletResponse.SC_CONFLICT, "Habit was not update");
+            }
+
+        } catch (IllegalArgumentException e) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            resp.getWriter().write("{\"error\":\"" + e.getMessage() + "\"}");
         }
     }
 

@@ -11,6 +11,7 @@ import y_lab.dto.UserRequestDto;
 import y_lab.mapper.UserMapper;
 import y_lab.mapper.UserMapperImpl;
 import y_lab.service.serviceImpl.UserServiceImpl;
+import y_lab.util.DtoValidator;
 import y_lab.util.EmailValidator;
 
 import java.io.BufferedReader;
@@ -89,15 +90,24 @@ public class UserController extends HttpServlet {
         ObjectMapper objectMapper = new ObjectMapper();
         UserRequestDto userRequestDto = objectMapper.readValue(json, UserRequestDto.class);
 
-        boolean upd = userService.editUser(userId, userMapper.userRequestDtoToUser(userRequestDto));
+        try {
+            // Валидация DTO
+            DtoValidator.validate(userRequestDto);
 
-        if (upd) {
-            resp.setStatus(HttpServletResponse.SC_OK); //200 ok
-            PrintWriter out = resp.getWriter();
-            out.print(true);
-            out.flush();
-        } else {
-            resp.sendError(HttpServletResponse.SC_CONFLICT, "User was not update");
+            boolean upd = userService.editUser(userId, userMapper.userRequestDtoToUser(userRequestDto));
+
+            if (upd) {
+                resp.setStatus(HttpServletResponse.SC_OK); //200 ok
+                PrintWriter out = resp.getWriter();
+                out.print(true);
+                out.flush();
+            } else {
+                resp.sendError(HttpServletResponse.SC_CONFLICT, "User was not update");
+            }
+
+        } catch (IllegalArgumentException e) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            resp.getWriter().write("{\"error\":\"" + e.getMessage() + "\"}");
         }
     }
 
