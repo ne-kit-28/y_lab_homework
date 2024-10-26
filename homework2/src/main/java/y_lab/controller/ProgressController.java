@@ -6,11 +6,15 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import y_lab.domain.Habit;
+import y_lab.service.HabitService;
 import y_lab.service.ProgressService;
+import y_lab.service.serviceImpl.HabitServiceImpl;
 import y_lab.service.serviceImpl.ProgressServiceImpl;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Optional;
 
 @WebServlet(urlPatterns =
         {
@@ -20,10 +24,12 @@ import java.io.PrintWriter;
 public class ProgressController extends HttpServlet {
 
     ProgressService progressService;
+    HabitService habitService;
 
     @Override
     public void init() throws ServletException {
         progressService = (ProgressServiceImpl) getServletContext().getAttribute("progressService");
+        habitService = (HabitServiceImpl) getServletContext().getAttribute("habitService");
     }
 
     @Override
@@ -32,11 +38,16 @@ public class ProgressController extends HttpServlet {
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
+        long habitId = Long.parseLong(req.getParameter("habitId"));
+        Optional<Habit> habit = habitService.getHabit(habitId);
+        if (habit.isEmpty() || !(habit.get().getUserId() == Long.parseLong(req.getParameter("userId")))) {
+            resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Habit not found");
+            return;
+        }
+
         if ("/api/progress".equals(req.getServletPath())) {
 
             String message;
-
-            long habitId = Long.parseLong(req.getParameter("habitId"));
 
             if (req.getParameter("type").equals("streak")) {
                 message = progressService.calculateStreak(habitId);

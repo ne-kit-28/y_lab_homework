@@ -2,7 +2,8 @@ package y_lab.domain.enums;
 
 public enum Role {
     ADMINISTRATOR,
-    REGULAR;
+    REGULAR,
+    UNAUTHORIZED;
 
     public String getValue() {
         return this.name();

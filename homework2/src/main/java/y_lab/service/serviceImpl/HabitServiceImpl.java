@@ -185,6 +185,39 @@ public class HabitServiceImpl implements HabitService {
     }
 
     @Override
+    public Optional<Habit> getHabit(Long habitId) {
+        try {
+            connection.setAutoCommit(false);
+
+            Optional<Habit> habit = habitRepository.findById(habitId);
+            if (habit.isPresent()) {
+                System.out.println("Name: " + habit.get().getName());
+                System.out.println("Description: " + habit.get().getDescription());
+                System.out.println("Created at: " + habit.get().getCreatedAt());
+                System.out.println("Frequency: " + habit.get().getFrequency().toString());
+            } else
+                System.out.println("No such habit");
+
+            connection.commit();
+            return habit;
+        } catch (SQLException e) {
+            try {
+                connection.rollback();
+            } catch (SQLException rollbackEx) {
+                rollbackEx.printStackTrace();
+            }
+            e.printStackTrace();
+        } finally {
+            try {
+                connection.setAutoCommit(true);
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+        }
+        return Optional.empty();
+    }
+
+    @Override
     public boolean updateHabit(Long id, Habit newHabit) {
 
         boolean upd = false;

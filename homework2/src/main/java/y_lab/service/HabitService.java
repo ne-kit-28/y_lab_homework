@@ -45,6 +45,8 @@ public interface HabitService {
      */
     Optional<Habit> getHabit(String habitName, Long userId);
 
+
+    Optional<Habit> getHabit(Long habitId);
     /**
      * Updates the details of an existing habit.
      *

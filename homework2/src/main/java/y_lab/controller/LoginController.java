@@ -13,6 +13,7 @@ import y_lab.dto.LoginUpDto;
 import y_lab.mapper.LoginMapper;
 import y_lab.mapper.LoginMapperImpl;
 import y_lab.service.serviceImpl.LoginServiceImpl;
+import y_lab.util.JwtUtil;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -59,6 +60,9 @@ public class LoginController extends HttpServlet {
             LoginResponseDto loginResponseDto = loginService.login(loginMapper.loginInDtoToUser(loginInDto));
 
             if (loginResponseDto.id() != -1L) {
+                String token = JwtUtil.generateToken(loginResponseDto.id(), loginResponseDto.role());
+                resp.setHeader("Authorization", "Bearer " + token);
+
                 resp.setStatus(HttpServletResponse.SC_OK); //200 ok
                 PrintWriter out = resp.getWriter();
                 out.print(loginResponseDto.id()); // Отправляем id
