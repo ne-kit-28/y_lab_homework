@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -42,6 +43,7 @@ public class LoginControllerTest {
     }
 
     @Test
+    @DisplayName("Успешный вход")
     void testSignInSuccess() throws Exception {
         LoginInDto loginInDto = new LoginInDto("user@example.com", "password123");
         LoginResponseDto loginResponseDto = new LoginResponseDto(1L, "user@example.com", "password123", "regular", "");
@@ -60,6 +62,7 @@ public class LoginControllerTest {
     }
 
     @Test
+    @DisplayName("Невалидные данные для входа")
     void testSignInNotValid() throws Exception {
         LoginInDto loginInDto = new LoginInDto("userexample.com", "password123");
 
@@ -75,6 +78,7 @@ public class LoginControllerTest {
     }
 
     @Test
+    @DisplayName("Неправильные данные для входа")
     void testSignInFailure() throws Exception {
         LoginInDto loginInDto = new LoginInDto("user@example.com", "wrongpassword");
         LoginResponseDto loginResponseDto = new LoginResponseDto(-1L, "user@example.com", "", "UNAUTHORIZED", "Incorrect password!");
@@ -89,6 +93,7 @@ public class LoginControllerTest {
     }
 
     @Test
+    @DisplayName("Успешная регистрация")
     void testSignUpSuccess() throws Exception {
         LoginUpDto loginUpDto = new LoginUpDto("user1","user@example.com", "password123");
         LoginResponseDto loginResponseDto = new LoginResponseDto(1L, "user@example.com", "password123", "regular", "Registration successful!");
@@ -107,6 +112,7 @@ public class LoginControllerTest {
     }
 
     @Test
+    @DisplayName("Регистрация с невалидными данными")
     void testSignUpNotValid() throws Exception {
         LoginUpDto loginUpDto = new LoginUpDto("user1","user@example.com", "pas");
 
@@ -122,6 +128,7 @@ public class LoginControllerTest {
     }
 
     @Test
+    @DisplayName("Регистрация с существующим email")
     void testSignUpFailure() throws Exception {
         LoginUpDto loginUpDto = new LoginUpDto("user2","user@example.com", "password123");
         LoginResponseDto loginResponseDto = new LoginResponseDto(-1L, "user@example.com", "", "UNAUTHORIZED", "User with this email already exists!");

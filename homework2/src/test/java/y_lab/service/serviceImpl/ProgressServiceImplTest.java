@@ -131,6 +131,7 @@ public class ProgressServiceImplTest {
     }
 
     @Test
+    @DisplayName("Создание отчета")
     public void GenerateReport() {
         Long habitId = 1L;
 

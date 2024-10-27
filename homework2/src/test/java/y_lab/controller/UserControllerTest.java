@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -49,6 +50,7 @@ class UserControllerTest {
     }
 
     @Test
+    @DisplayName("Успешное полуение всех пользователей")
     void testGetAllUsersSuccess() throws Exception {
         when(request.getServletPath()).thenReturn("/api/user/all");
         ArrayList<User> users = new ArrayList<>();
@@ -65,6 +67,7 @@ class UserControllerTest {
     }
 
     @Test
+    @DisplayName("Получение пользователя по почте")
     void testGetUserByEmailSuccess() throws Exception {
         String email = "user@example.com";
         User user = new User();
@@ -83,6 +86,7 @@ class UserControllerTest {
     }
 
     @Test
+    @DisplayName("Получение пользователя по неверной почте")
     void testGetUserByEmailNotFound() throws Exception {
         String email = "nonexistent@example.com";
 
@@ -95,6 +99,7 @@ class UserControllerTest {
     }
 
     @Test
+    @DisplayName("Успешное изменение пользователя")
     void testEditUserSuccess() throws Exception {
         Long userId = 1L;
         UserRequestDto userRequestDto = new UserRequestDto("new@example.com", "newName", "123456");
@@ -113,6 +118,7 @@ class UserControllerTest {
     }
 
     @Test
+    @DisplayName("Неуспешное изменение пользователя")
     void testEditUserFailure() throws Exception {
         Long userId = 1L;
         UserRequestDto userRequestDto = new UserRequestDto("new@example.com", "newName", "123456");
@@ -127,6 +133,7 @@ class UserControllerTest {
     }
 
     @Test
+    @DisplayName("Тест на успешное удаление пользователя")
     void testDeleteUserSuccess() throws Exception {
         Long userId = 1L;
 
@@ -143,6 +150,7 @@ class UserControllerTest {
     }
 
     @Test
+    @DisplayName("Тест на неуспешное удаление пользователя")
     void testDeleteUserFailure() throws Exception {
         Long userId = 1L;
 

@@ -2,6 +2,7 @@ package y_lab.repository.repositoryImpl;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -79,6 +80,7 @@ public class ProgressRepositoryImplTest {
     }
 
     @Test
+    @DisplayName("Сохранение прогресса")
     void testSaveAndFindById() throws SQLException {
         // Insert user and habit
         connection.prepareStatement("INSERT INTO domain.users (username) VALUES ('testuser');").execute();
@@ -100,6 +102,7 @@ public class ProgressRepositoryImplTest {
     }
 
     @Test
+    @DisplayName("Удаление всех выполнений")
     void testDeleteAllByHabitId() throws SQLException {
         // Insert user and habit
         connection.prepareStatement("INSERT INTO domain.users (username) VALUES ('testuser');").execute();
@@ -121,6 +124,7 @@ public class ProgressRepositoryImplTest {
     }
 
     @Test
+    @DisplayName("Получение списка выполнений по userId")
     void testFindByHabitId() throws SQLException {
         // Insert user and habit
         connection.prepareStatement("INSERT INTO domain.users (username) VALUES ('testuser');").execute();

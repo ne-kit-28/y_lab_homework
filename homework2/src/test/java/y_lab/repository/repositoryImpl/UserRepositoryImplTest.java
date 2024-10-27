@@ -2,6 +2,7 @@ package y_lab.repository.repositoryImpl;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -66,6 +67,7 @@ public class UserRepositoryImplTest {
     }
 
     @Test
+    @DisplayName("Сохранение пользователя")
     void SaveAndFindById() throws SQLException {
         User user = new User(null, "testuser@example.com", "hashedpassword", "Test User", false, Role.REGULAR, null);
 
@@ -78,6 +80,7 @@ public class UserRepositoryImplTest {
     }
 
     @Test
+    @DisplayName("Проверка существования email")
     void testIsEmailExist() throws SQLException {
         User user = new User(null, "existinguser@example.com", "hashedpassword", "Existing User", false, Role.REGULAR, null);
         userRepository.save(user);
@@ -88,6 +91,7 @@ public class UserRepositoryImplTest {
     }
 
     @Test
+    @DisplayName("Проверка пользователя на роль админимтратора")
     void testIsAdminEmail() throws SQLException {
         connection.prepareStatement("INSERT INTO service.admins (email) VALUES ('admin@example.com');").execute();
 
@@ -97,6 +101,7 @@ public class UserRepositoryImplTest {
     }
 
     @Test
+    @DisplayName("Получение всех пользователей")
     void testGetAll() throws SQLException {
         User user1 = new User(null, "user1@example.com", "hash1", "User One", false, Role.REGULAR, null);
         User user2 = new User(null, "user2@example.com", "hash2", "User Two", false, Role.REGULAR, null);
@@ -109,6 +114,7 @@ public class UserRepositoryImplTest {
     }
 
     @Test
+    @DisplayName("Удаление пользователя")
     void testDeleteById() throws SQLException {
         User user = new User(null, "user@example.com", "hash", "User", false, Role.REGULAR, null);
         userRepository.save(user);
@@ -120,6 +126,7 @@ public class UserRepositoryImplTest {
     }
 
     @Test
+    @DisplayName("Обновление пользователя")
     void testUpdate() throws SQLException {
         User user = new User(1L, "user@example.com", "hash", "User", false, Role.REGULAR, null);
         userRepository.save(user);

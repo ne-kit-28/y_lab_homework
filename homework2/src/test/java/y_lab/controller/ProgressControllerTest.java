@@ -3,6 +3,7 @@ package y_lab.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -50,7 +51,8 @@ class ProgressControllerTest {
     }
 
     @Test
-    void testDoGet_withStreakType_success() throws Exception {
+    @DisplayName("Получение стриков")
+    void testDoGetStreakSuccess() throws Exception {
         when(request.getServletPath()).thenReturn("/api/progress");
         when(request.getParameter("type")).thenReturn("streak");
         when(habitService.getHabit(anyLong())).thenReturn(Optional.of(new Habit(1L, 1L, "sleep", "a lot", Frequency.DAILY, LocalDate.now().minusDays(1))));
@@ -62,7 +64,8 @@ class ProgressControllerTest {
     }
 
     @Test
-    void testDoGet_withStatisticType_success() throws Exception {
+    @DisplayName("Получение статистики")
+    void testDoGetStatisticSuccess() throws Exception {
         when(request.getServletPath()).thenReturn("/api/progress");
         when(request.getParameter("type")).thenReturn("statistic");
         when(request.getParameter("period")).thenReturn("weekly");
@@ -75,7 +78,8 @@ class ProgressControllerTest {
     }
 
     @Test
-    void testDoGet_withReportType_success() throws Exception {
+    @DisplayName("Получение отчета")
+    void testDoGetReportSuccess() throws Exception {
         when(request.getServletPath()).thenReturn("/api/progress");
         when(request.getParameter("type")).thenReturn("report");
         when(request.getParameter("period")).thenReturn("monthly");
@@ -88,7 +92,8 @@ class ProgressControllerTest {
     }
 
     @Test
-    void testDoGet_withInvalidHabitId() throws Exception {
+    @DisplayName("Попытка получить прогресс с невалидным habitId")
+    void testDoGetInvalidId() throws Exception {
         when(request.getServletPath()).thenReturn("/api/progress");
         when(request.getParameter("habitId")).thenReturn("invalid_id");
         progressController.doGet(request, response);
@@ -96,7 +101,8 @@ class ProgressControllerTest {
     }
 
     @Test
-    void testDoGet_habitNotFound() throws Exception {
+    @DisplayName("Получение прогресса по несуществкющему ид")
+    void testDoGetNotFound() throws Exception {
         when(habitService.getHabit(anyLong())).thenReturn(Optional.empty());
 
         progressController.doGet(request, response);
@@ -104,7 +110,8 @@ class ProgressControllerTest {
     }
 
     @Test
-    void testDoPost_createProgress_success() throws Exception {
+    @DisplayName("Успешное создание выполнения")
+    void testCreateProgress() throws Exception {
         when(request.getServletPath()).thenReturn("/api/progress/create");
         when(progressService.createProgress(anyLong())).thenReturn(true);
 
@@ -113,7 +120,8 @@ class ProgressControllerTest {
     }
 
     @Test
-    void testDoPost_createProgress_habitNotFound() throws Exception {
+    @DisplayName("Создание выполнения по несуществующему habitId")
+    void createProgressNotFound() throws Exception {
         when(request.getServletPath()).thenReturn("/api/progress/create");
         when(progressService.createProgress(anyLong())).thenReturn(false);
 
@@ -122,7 +130,8 @@ class ProgressControllerTest {
     }
 
     @Test
-    void testDoPost_withInvalidHabitId() throws Exception {
+    @DisplayName("Создание с невалидным habitId")
+    void createInvalidHabitId() throws Exception {
         when(request.getServletPath()).thenReturn("/api/progress/create");
         when(request.getParameter("habitId")).thenReturn("invalid_id");
 

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -48,6 +49,7 @@ class HabitControllerTest {
     }
 
     @Test
+    @DisplayName("Успешное получение всех привычек")
     void testDoGetAllHabitsSuccess() throws Exception {
         // Настройка параметров запроса и мока сервиса
         when(request.getServletPath()).thenReturn("/api/habit/all");
@@ -65,6 +67,7 @@ class HabitControllerTest {
     }
 
     @Test
+    @DisplayName("Успешное создание привычки")
     void testDoPostCreateHabitSuccess() throws Exception {
         when(request.getParameter("userId")).thenReturn("1");
         HabitRequestDto habitRequestDto = new HabitRequestDto("Updated Habit", "a new description", "daily");
@@ -78,6 +81,7 @@ class HabitControllerTest {
     }
 
     @Test
+    @DisplayName("Успешное обновление привычки")
     void testDoPutUpdateHabitSuccess() throws Exception {
         when(request.getParameter("habitId")).thenReturn("1");
         when(habitService.updateHabit(any(), any())).thenReturn(true);
@@ -91,6 +95,7 @@ class HabitControllerTest {
     }
 
     @Test
+    @DisplayName("Удаление привычки")
     void testDoDeleteHabitSuccess() throws Exception {
         when(request.getParameter("habitId")).thenReturn("1");
         when(habitService.deleteHabit(1L)).thenReturn(true);
