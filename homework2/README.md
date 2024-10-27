@@ -1,5 +1,5 @@
 # y_lab_homework
-Homework2
+Homework3
 
 Запуск:
 1. Убедитесь, что у вас установлены необходимые инструменты:
@@ -12,7 +12,7 @@ mvn -v
 
 git clone https://github.com/ne-kit-28/y_lab_homework.git
 cd y_lab_homework
-git checkout -b homework2 origin/homework2
+git checkout -b homework3 origin/homework3
 cd homework2
 
 3. Запустите докер
@@ -23,10 +23,14 @@ docker --version
 docker compose up -d
 
 4. Сборка проекта
-Выполните команду, чтобы собрать проект. Это скомпилирует код, выполнит тесты и создаст исполняемый JAR-файл.
+Выполните команду, чтобы собрать проект. Это скомпилирует код, выполнит тесты и создаст WAR-файл.
 
 mvn clean install
 
-5. Запуск проекта
-После успешной сборки и запуска БД можно запустить проект.
-java -jar target/habits-latest.jar
+5. Проверьте, установлен ли у вас tomcat версии 10+
+
+6. Перейдите по http://localhost:8080/
+Зайдите в Manager App, в окне "развернуть" выберите "Выберите WAR файл для загрузки" 
+и откройте собранный habits-latest.war. После этого нажмите "Развернуть"
+
+7. Можно пользоваться сервером.
