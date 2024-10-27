@@ -7,6 +7,8 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import y_lab.domain.Habit;
+import y_lab.out.audit.AuditAction;
+import y_lab.out.audit.LogExecutionTime;
 import y_lab.service.HabitService;
 import y_lab.service.ProgressService;
 import y_lab.service.serviceImpl.HabitServiceImpl;
@@ -33,67 +35,76 @@ public class ProgressController extends HttpServlet {
     }
 
     @Override
+    @LogExecutionTime
+    @AuditAction(action = "Попытка получения информации о выполнении")
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
-        long habitId = Long.parseLong(req.getParameter("habitId"));
-        Optional<Habit> habit = habitService.getHabit(habitId);
-        if (habit.isEmpty() || !(habit.get().getUserId() == Long.parseLong(req.getParameter("userId")))) {
-            resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Habit not found");
-            return;
-        }
+        try {
+            long habitId = Long.parseLong(req.getParameter("habitId"));
 
-        if ("/api/progress".equals(req.getServletPath())) {
+            Optional<Habit> habit = habitService.getHabit(habitId);
+            if (habit.isEmpty() || !(habit.get().getUserId() == Long.parseLong(req.getParameter("userId")))) {
+                resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Habit not found");
+                return;
+            }
 
-            String message;
+            if ("/api/progress".equals(req.getServletPath())) {
 
-            if (req.getParameter("type").equals("streak")) {
-                message = progressService.calculateStreak(habitId);
+                String message;
 
-                resp.setStatus(HttpServletResponse.SC_OK);
-                PrintWriter out = resp.getWriter();
+                if (req.getParameter("type").equals("streak")) {
+                    message = progressService.calculateStreak(habitId);
 
-                ObjectMapper objectMapper = new ObjectMapper();
-                String jsonResponse = objectMapper.writeValueAsString(message);
+                    resp.setStatus(HttpServletResponse.SC_OK);
+                    PrintWriter out = resp.getWriter();
 
-                out.print(jsonResponse);
-                out.flush();
-            } else if (req.getParameter("type").equals("statistic")) {
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    String jsonResponse = objectMapper.writeValueAsString(message);
 
-                String period = req.getParameter("period");
+                    out.print(jsonResponse);
+                    out.flush();
+                } else if (req.getParameter("type").equals("statistic")) {
 
-                message = progressService.generateProgressStatistics(habitId, period);
+                    String period = req.getParameter("period");
 
-                resp.setStatus(HttpServletResponse.SC_OK);
-                PrintWriter out = resp.getWriter();
+                    message = progressService.generateProgressStatistics(habitId, period);
 
-                ObjectMapper objectMapper = new ObjectMapper();
-                String jsonResponse = objectMapper.writeValueAsString(message);
+                    resp.setStatus(HttpServletResponse.SC_OK);
+                    PrintWriter out = resp.getWriter();
 
-                out.print(jsonResponse);
-                out.flush();
-            } else if (req.getParameter("type").equals("report")) {
-                String period = req.getParameter("period");
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    String jsonResponse = objectMapper.writeValueAsString(message);
 
-                message = progressService.generateReport(habitId, period);
+                    out.print(jsonResponse);
+                    out.flush();
+                } else if (req.getParameter("type").equals("report")) {
+                    String period = req.getParameter("period");
 
-                resp.setStatus(HttpServletResponse.SC_OK);
-                PrintWriter out = resp.getWriter();
+                    message = progressService.generateReport(habitId, period);
 
-                ObjectMapper objectMapper = new ObjectMapper();
-                String jsonResponse = objectMapper.writeValueAsString(message);
+                    resp.setStatus(HttpServletResponse.SC_OK);
+                    PrintWriter out = resp.getWriter();
 
-                out.print(jsonResponse);
-                out.flush();
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    String jsonResponse = objectMapper.writeValueAsString(message);
+
+                    out.print(jsonResponse);
+                    out.flush();
+                } else
+                    resp.sendError(HttpServletResponse.SC_NOT_FOUND, "type is incorrect");
             } else
-                resp.sendError(HttpServletResponse.SC_NOT_FOUND, "type is incorrect");
-        } else
-            resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Path not found");
+                resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Path not found");
+        } catch (NumberFormatException e) {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Некорректный habitId");
+        }
     }
 
     @Override
+    @LogExecutionTime
+    @AuditAction(action = "Попытка отметить выполнение привычки")
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
@@ -101,11 +112,11 @@ public class ProgressController extends HttpServlet {
         if ("/api/progress/create".equals(req.getServletPath())) {
             try {
                 if (progressService.createProgress(Long.parseLong(req.getParameter("habitId"))))
-                    resp.setStatus(HttpServletResponse.SC_OK);
+                    resp.setStatus(HttpServletResponse.SC_CREATED);
                 else
                     resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Habit with such id not found");
             } catch (NumberFormatException ex) {
-                resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "id is incorrect");
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "id is incorrect");
             }
         } else
             resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Path not found");

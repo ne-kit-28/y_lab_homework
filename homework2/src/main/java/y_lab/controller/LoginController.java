@@ -12,6 +12,9 @@ import y_lab.dto.LoginResponseDto;
 import y_lab.dto.LoginUpDto;
 import y_lab.mapper.LoginMapper;
 import y_lab.mapper.LoginMapperImpl;
+import y_lab.out.audit.AuditAction;
+import y_lab.out.audit.LogExecutionTime;
+import y_lab.service.LoginService;
 import y_lab.service.serviceImpl.LoginServiceImpl;
 import y_lab.util.DtoValidator;
 import y_lab.util.JwtUtil;
@@ -27,16 +30,17 @@ import java.io.PrintWriter;
         , "/api/login/password/reset/*" })
 public class LoginController extends HttpServlet {
 
-    LoginMapper loginMapper;
-    LoginServiceImpl loginService;
+    private final LoginMapper loginMapper = new LoginMapperImpl();;
+    LoginService loginService;
 
     @Override
     public void init() throws ServletException {
-        loginMapper = new LoginMapperImpl();
         loginService = (LoginServiceImpl) getServletContext().getAttribute("loginService");
     }
 
     @Override
+    @LogExecutionTime
+    @AuditAction(action = "Попытка авторизации")
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
         resp.setContentType("application/json");

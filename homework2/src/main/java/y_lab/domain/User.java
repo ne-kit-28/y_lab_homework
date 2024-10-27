@@ -1,15 +1,14 @@
 package y_lab.domain;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import y_lab.domain.enums.Role;
 
 import java.io.Serializable;
 
 
 @Data
+@Getter
+@Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor

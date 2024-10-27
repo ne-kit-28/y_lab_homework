@@ -3,6 +3,8 @@ package y_lab.service.serviceImpl;
 import y_lab.domain.Habit;
 import y_lab.domain.Progress;
 import y_lab.domain.enums.Frequency;
+import y_lab.repository.HabitRepository;
+import y_lab.repository.ProgressRepository;
 import y_lab.repository.repositoryImpl.HabitRepositoryImpl;
 import y_lab.repository.repositoryImpl.ProgressRepositoryImpl;
 import y_lab.service.ProgressService;
@@ -18,8 +20,8 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 
 public class ProgressServiceImpl implements ProgressService {
-    private final HabitRepositoryImpl habitRepository;
-    private final ProgressRepositoryImpl progressRepository;
+    private final HabitRepository habitRepository;
+    private final ProgressRepository progressRepository;
     private final Connection connection;
 
     public ProgressServiceImpl(

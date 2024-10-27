@@ -28,7 +28,6 @@ public class JwtFilterUserId implements Filter {
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse resp = (HttpServletResponse) response;
 
-        // Получаем токен из заголовка
         String token = req.getHeader("Authorization");
 
         if (token == null || !token.startsWith("Bearer ")) {
@@ -36,7 +35,7 @@ public class JwtFilterUserId implements Filter {
             return;
         }
 
-        token = token.substring(7); // Убираем "Bearer "
+        token = token.substring(7); // Убираем Bearer
 
         try {
             String roleFromToken = JwtUtil.getRole(token);

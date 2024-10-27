@@ -1,6 +1,8 @@
 package y_lab.service;
 
 import y_lab.domain.Habit;
+import y_lab.out.audit.AuditAction;
+import y_lab.out.audit.LogExecutionTime;
 
 import java.util.ArrayList;
 import java.util.Optional;
@@ -17,6 +19,8 @@ public interface HabitService {
      * @param habit       the Habit
      * @return            id of habit
      */
+    @LogExecutionTime
+    @AuditAction(action = "Создание привычки")
     Long createHabit(Long userId, Habit habit);
 
     /**
@@ -25,6 +29,8 @@ public interface HabitService {
      * @param id the ID of the habit to be deleted
      * @return               update or not(true/false)
      */
+    @LogExecutionTime
+    @AuditAction(action = "Удаление привычки")
     boolean deleteHabit(Long id);
 
     /**
@@ -34,6 +40,8 @@ public interface HabitService {
      * @param filter  the filtering criteria, which can be a String (for sorting) or Frequency
      * @return a list of habits associated with the user
      */
+    @LogExecutionTime
+    @AuditAction(action = "Получение всех привычек пользователя")
     ArrayList<Habit> getHabits(Long userId, String filter);
 
     /**
@@ -43,16 +51,21 @@ public interface HabitService {
      * @param userId    the ID of the user
      * @return the ID of the habit if found, otherwise -1
      */
+    @LogExecutionTime
+    @AuditAction(action = "Получение привычки по имени")
     Optional<Habit> getHabit(String habitName, Long userId);
 
-
+    @LogExecutionTime
+    @AuditAction(action = "Получение привычки по id")
     Optional<Habit> getHabit(Long habitId);
     /**
      * Updates the details of an existing habit.
      *
      * @param id             the ID of the habit to update
      * @param habit       the Habit
-     * @return               delete or not(true/false)
+     * @return               update or not(true/false)
      */
+    @LogExecutionTime
+    @AuditAction(action = "Обновление информаци о привычке")
     boolean updateHabit(Long id, Habit habit);
 }

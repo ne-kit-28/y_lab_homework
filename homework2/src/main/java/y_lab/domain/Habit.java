@@ -1,15 +1,14 @@
 package y_lab.domain;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 import y_lab.domain.enums.Frequency;
 
 import java.io.Serializable;
 import java.time.LocalDate;
 
 @Data
+@Getter
+@Setter
 @Builder
 @AllArgsConstructor
 @RequiredArgsConstructor

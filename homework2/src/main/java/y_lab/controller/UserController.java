@@ -10,6 +10,9 @@ import y_lab.domain.User;
 import y_lab.dto.UserRequestDto;
 import y_lab.mapper.UserMapper;
 import y_lab.mapper.UserMapperImpl;
+import y_lab.out.audit.AuditAction;
+import y_lab.out.audit.LogExecutionTime;
+import y_lab.service.UserService;
 import y_lab.service.serviceImpl.UserServiceImpl;
 import y_lab.util.DtoValidator;
 import y_lab.util.EmailValidator;
@@ -22,12 +25,11 @@ import java.util.Optional;
 @WebServlet(urlPatterns = {"/api/user/all", "/api/user/*"})
 public class UserController extends HttpServlet {
 
-    UserServiceImpl userService;
-    UserMapper userMapper;
+    UserService userService;
+    UserMapper userMapper = new UserMapperImpl();
 
     @Override
     public void init() throws ServletException {
-        userMapper = new UserMapperImpl();
         userService = (UserServiceImpl) getServletContext().getAttribute("userService");
 
         if (userService == null) {
@@ -36,6 +38,8 @@ public class UserController extends HttpServlet {
     }
 
     @Override
+    @LogExecutionTime
+    @AuditAction(action = "Попытка получения пользователя(-лей)")
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
         resp.setContentType("application/json");
@@ -48,7 +52,7 @@ public class UserController extends HttpServlet {
                     userMapper.usersToUserResponseDtos(
                             userService.getUsers()));
 
-            // Отправляем JSON-ответ
+            resp.setStatus(HttpServletResponse.SC_OK);
             resp.getWriter().write(jsonResponse);
         } else if (EmailValidator.isValid(req.getParameter("email"))) { // валидация email
             String email = req.getParameter("email");
@@ -61,6 +65,7 @@ public class UserController extends HttpServlet {
                 String jsonResponse = objectMapper.writeValueAsString(
                         userMapper.userToUserResponseDto(
                                 user.get()));
+                resp.setStatus(HttpServletResponse.SC_OK);
                 resp.getWriter().write(jsonResponse);
             }
         } else {
@@ -69,6 +74,8 @@ public class UserController extends HttpServlet {
     }
 
     @Override
+    @LogExecutionTime
+    @AuditAction(action = "Попытка изменения пользователя")
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
         resp.setContentType("application/json");
@@ -76,7 +83,6 @@ public class UserController extends HttpServlet {
 
         Long userId = Long.parseLong(req.getParameter("userId"));
 
-        // Чтение JSON from req
         StringBuilder sb = new StringBuilder();
         String line;
         try (BufferedReader reader = req.getReader()) {
@@ -85,13 +91,11 @@ public class UserController extends HttpServlet {
             }
         }
 
-        // Преобразование JSON в user
         String json = sb.toString();
         ObjectMapper objectMapper = new ObjectMapper();
         UserRequestDto userRequestDto = objectMapper.readValue(json, UserRequestDto.class);
 
         try {
-            // Валидация DTO
             DtoValidator.validate(userRequestDto);
 
             boolean upd = userService.editUser(userId, userMapper.userRequestDtoToUser(userRequestDto));
@@ -112,6 +116,8 @@ public class UserController extends HttpServlet {
     }
 
     @Override
+    @LogExecutionTime
+    @AuditAction(action = "Попытка удаления пользователя")
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");

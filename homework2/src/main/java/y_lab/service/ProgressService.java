@@ -1,5 +1,8 @@
 package y_lab.service;
 
+import y_lab.out.audit.AuditAction;
+import y_lab.out.audit.LogExecutionTime;
+
 /**
  * Interface representing the service for managing user progress related to habits.
  */
@@ -10,6 +13,8 @@ public interface ProgressService {
      *
      * @param habitId the ID of the habit that was completed
      */
+    @LogExecutionTime
+    @AuditAction(action = "Отметка выполнения привычки")
     boolean createProgress(Long habitId);
 
     /**
@@ -18,6 +23,8 @@ public interface ProgressService {
      * @param habitId the ID of the habit for which to generate statistics
      * @param period  the period over which to calculate statistics (e.g., "day", "week", "month")
      */
+    @LogExecutionTime
+    @AuditAction(action = "Создание статистики")
     String generateProgressStatistics(Long habitId, String period);
 
     /**
@@ -25,6 +32,8 @@ public interface ProgressService {
      *
      * @param habitId the ID of the habit for which to calculate the streak
      */
+    @LogExecutionTime
+    @AuditAction(action = "Подсчет стриков")
     String calculateStreak(Long habitId);
 
     /**
@@ -33,5 +42,7 @@ public interface ProgressService {
      * @param habitId the ID of the habit for which to generate the report
      * @param period  the period over which to generate the report (e.g., "day", "week", "month")
      */
+    @LogExecutionTime
+    @AuditAction(action = "Генерация отчета")
     String generateReport(Long habitId, String period);
 }

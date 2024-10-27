@@ -10,7 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class JwtUtil {
-    private static final String SECRET_KEY = "secret_key";
+    private static final String SECRET_KEY = "great_long_secret_key_which_can_be_use";
     private static final long EXPIRATION_TIME = 600000; // 10 минут
 
     // Генерация токена

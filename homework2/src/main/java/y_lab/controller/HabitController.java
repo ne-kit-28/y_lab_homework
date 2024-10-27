@@ -10,6 +10,9 @@ import y_lab.domain.Habit;
 import y_lab.dto.HabitRequestDto;
 import y_lab.mapper.HabitMapper;
 import y_lab.mapper.HabitMapperImpl;
+import y_lab.out.audit.AuditAction;
+import y_lab.out.audit.LogExecutionTime;
+import y_lab.service.HabitService;
 import y_lab.service.serviceImpl.HabitServiceImpl;
 import y_lab.util.DtoValidator;
 
@@ -20,13 +23,13 @@ import java.util.Optional;
 
 @WebServlet(urlPatterns ={"/api/habit/all", "/api/habit/*"})
 public class HabitController extends HttpServlet {
-    private HabitServiceImpl habitService;
-    private HabitMapper habitMapper;
+    private HabitService habitService;
+    private final HabitMapper habitMapper = new HabitMapperImpl();
 
     @Override
     public void init() throws ServletException {
         habitService = (HabitServiceImpl) getServletContext().getAttribute("habitService");
-        habitMapper = new HabitMapperImpl();
+
 
         if (habitService == null) {
             throw new ServletException("HabitService не инициализированы");
@@ -34,6 +37,8 @@ public class HabitController extends HttpServlet {
     }
 
     @Override
+    @LogExecutionTime
+    @AuditAction(action = "Попытка получения привычек(-ки)")
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
         resp.setContentType("application/json");
@@ -49,6 +54,7 @@ public class HabitController extends HttpServlet {
                             habitService.getHabits(userId, filter)));
 
             // Отправляем JSON-ответ
+            resp.setStatus(HttpServletResponse.SC_OK);
             resp.getWriter().write(jsonResponse);
         } else if (req.getParameter("userId").matches("\\d+")) { // Проверка, что userId содержит Id
             Long userId = Long.parseLong(req.getParameter("userId"));
@@ -71,6 +77,8 @@ public class HabitController extends HttpServlet {
 
 
     @Override
+    @LogExecutionTime
+    @AuditAction(action = "Попытка создания привычки")
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
@@ -112,6 +120,8 @@ public class HabitController extends HttpServlet {
     }
 
     @Override
+    @LogExecutionTime
+    @AuditAction(action = "Попытка изменения привычки")
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
@@ -153,6 +163,8 @@ public class HabitController extends HttpServlet {
     }
 
     @Override
+    @LogExecutionTime
+    @AuditAction(action = "Попытка удаления привычки")
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
