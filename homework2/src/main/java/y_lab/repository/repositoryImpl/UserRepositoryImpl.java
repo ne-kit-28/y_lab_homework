@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import y_lab.domain.User;
 import y_lab.domain.enums.Role;
+import y_lab.repository.SqlScripts;
 import y_lab.repository.UserRepository;
 
 import java.sql.*;
@@ -20,8 +21,7 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public boolean isEmailExist(String email) throws SQLException {
-        String sql =
-                "SELECT COUNT(*) as count FROM domain.users WHERE email = ?";
+        String sql = SqlScripts.USER_IS_EMAIL_EXIST;
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, email);
@@ -37,8 +37,7 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public boolean isAdminEmail(String email) throws SQLException{
-        String sql =
-                "SELECT COUNT(*) as count FROM service.admins WHERE email = ?";
+        String sql = SqlScripts.USER_IS_ADMIN_EMAIL;
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, email);
@@ -54,9 +53,7 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public void save(User user) throws SQLException {
-        String sql =
-                "INSERT INTO domain.users (id, email, password_hash, name, is_block, role, reset_token) " +
-                        "VALUES (nextval('domain.user_id_seq'), ?, ?, ?, ?, ?, ?)"; // вызов nextval - явное использование Sequence
+        String sql = SqlScripts.USER_SAVE;
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, user.getEmail());
@@ -72,8 +69,7 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public Optional<User> findByEmail(String email) throws SQLException{
-        String sql =
-                "SELECT * FROM domain.users WHERE email = ?";
+        String sql = SqlScripts.USER_FIND_BY_EMAIL;
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, email);
@@ -96,8 +92,7 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public Optional<User> findById(Long id) throws SQLException{
-        String sql =
-                "SELECT * FROM domain.users WHERE id = ?";
+        String sql = SqlScripts.USER_FIND_BY_ID;
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setLong(1, id);
@@ -122,8 +117,7 @@ public class UserRepositoryImpl implements UserRepository {
     public ArrayList<User> getAll() throws SQLException{
         ArrayList<User> users = new ArrayList<>();
 
-        String sql =
-                "SELECT * FROM domain.users";
+        String sql = SqlScripts.USER_GET_ALL;
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             ResultSet resultSet = stmt.executeQuery();
@@ -146,8 +140,7 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public void deleteById(Long id) throws SQLException{
-        String sql =
-                "DELETE FROM domain.users WHERE id = ?";
+        String sql = SqlScripts.USER_DELETE_BY_ID;
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setLong(1, id);
@@ -157,7 +150,7 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public void update(Long id, User user) throws SQLException{
-        String sql = "UPDATE domain.users SET email = ?, password_hash = ?, name = ?, is_block = ?, role = ?, reset_token = ? WHERE id = ?";
+        String sql = SqlScripts.USER_UPDATE;
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setLong(7, user.getId());

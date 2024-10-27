@@ -5,6 +5,7 @@ import lombok.Setter;
 import y_lab.domain.Habit;
 import y_lab.domain.enums.Frequency;
 import y_lab.repository.HabitRepository;
+import y_lab.repository.SqlScripts;
 
 import java.sql.*;
 import java.time.LocalDate;
@@ -23,9 +24,7 @@ public class HabitRepositoryImpl implements HabitRepository {
     @Override
     public Optional<Habit> findById(Long id) throws SQLException {
 
-        String sql =
-                "SELECT * FROM domain.habits " +
-                "WHERE id = ?";
+        String sql = SqlScripts.HABIT_FIND_BY_ID;
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setLong(1, id);
@@ -48,9 +47,7 @@ public class HabitRepositoryImpl implements HabitRepository {
 
     @Override
     public Optional<Habit> findByName(String name, Long userId) throws SQLException{
-        String sql =
-                "SELECT * FROM domain.habits " +
-                        "WHERE name = ? AND user_id = ?";
+        String sql = SqlScripts.HABIT_FIND_BY_NAME;
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setLong(2, userId);
@@ -74,9 +71,7 @@ public class HabitRepositoryImpl implements HabitRepository {
 
     @Override
     public void save(Habit habit) throws SQLException{
-        String sql =
-                "INSERT INTO domain.habits (id, user_id, name, description, frequency, created_at) " +
-                        "VALUES (nextval('domain.habit_id_seq'), ?, ?, ?, ?, ?)"; //вызов nextval - явное использование Sequence
+        String sql = SqlScripts.HABIT_SAVE;
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setLong(1, habit.getUserId());
@@ -91,8 +86,7 @@ public class HabitRepositoryImpl implements HabitRepository {
 
     @Override
     public void delete(Long id) throws SQLException{
-        String sql =
-                "DELETE FROM domain.habits WHERE id = ?";
+        String sql = SqlScripts.HABIT_DELETE_BY_ID;
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setLong(1, id);
             stmt.executeUpdate();
@@ -101,8 +95,7 @@ public class HabitRepositoryImpl implements HabitRepository {
 
     @Override
     public void deleteAllByUserId(Long userId) throws SQLException{
-        String sql =
-                "DELETE FROM domain.habits WHERE user_id = ?";
+        String sql = SqlScripts.HABIT_DELETE_ALL_BY_USER_ID;
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setLong(1, userId);
             stmt.executeUpdate();
@@ -113,9 +106,7 @@ public class HabitRepositoryImpl implements HabitRepository {
     public Optional<ArrayList<Habit>> findHabitsByUserId(Long userId) throws SQLException{
         ArrayList<Habit> habits = new ArrayList<>();
 
-        String sql =
-                "SELECT * FROM domain.habits " +
-                        "WHERE user_id = ?";
+        String sql = SqlScripts.HABIT_FIND_BY_USER_ID;
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setLong(1, userId);
@@ -141,8 +132,7 @@ public class HabitRepositoryImpl implements HabitRepository {
     public ArrayList<Habit> getAll() throws SQLException{
         ArrayList<Habit> habits = new ArrayList<>();
 
-        String sql =
-                "SELECT * FROM domain.habits";
+        String sql = SqlScripts.HABIT_GET_ALL;
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             ResultSet resultSet = stmt.executeQuery();
@@ -165,7 +155,7 @@ public class HabitRepositoryImpl implements HabitRepository {
 
     @Override
     public void update(Long id, Habit habit) throws SQLException{
-        String sql = "UPDATE domain.habits SET user_id = ?, name = ?, description = ?, frequency = ?, created_at = ? WHERE id = ?";
+        String sql = SqlScripts.HABIT_UPDATE;
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setLong(6, habit.getId());

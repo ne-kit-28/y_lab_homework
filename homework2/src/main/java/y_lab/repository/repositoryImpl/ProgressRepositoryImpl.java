@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import y_lab.domain.Progress;
 import y_lab.repository.ProgressRepository;
+import y_lab.repository.SqlScripts;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -23,9 +24,7 @@ public class ProgressRepositoryImpl implements ProgressRepository{
 
     @Override
     public void save(Progress progress) throws SQLException {
-        String sql =
-                "INSERT INTO domain.progresses (id, user_id, habit_id, date) " +
-                        "VALUES (nextval('domain.progress_id_seq'), ?, ?, ?)"; //вызов nextval - явное использование Sequence
+        String sql = SqlScripts.PROGRESS_SAVE;
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setLong(1, progress.getUserId());
@@ -38,8 +37,8 @@ public class ProgressRepositoryImpl implements ProgressRepository{
 
     @Override
     public void deleteAllByHabitId(Long habitId) throws SQLException {
-        String sql =
-                "DELETE FROM domain.progresses WHERE habit_id = ?";
+        String sql = SqlScripts.PROGRESS_DELETE_ALL_BY_HABIT_ID;
+
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setLong(1, habitId);
 
@@ -49,8 +48,8 @@ public class ProgressRepositoryImpl implements ProgressRepository{
 
     @Override
     public void deleteAllByUserId(Long userId) throws SQLException {
-        String sql =
-                "DELETE FROM domain.progresses WHERE user_id = ?";
+        String sql = SqlScripts.PROGRESS_DELETE_ALL_BY_USER_ID;
+
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setLong(1, userId);
 
@@ -60,9 +59,8 @@ public class ProgressRepositoryImpl implements ProgressRepository{
 
     @Override
     public Optional<Progress> findById(Long progressId) throws SQLException {
-        String sql =
-                "SELECT * FROM domain.progresses " +
-                        "WHERE id = ?";
+        String sql = SqlScripts.PROGRESS_FIND_BY_ID;
+
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setLong(1, progressId);
             ResultSet resultSet = stmt.executeQuery();
@@ -84,15 +82,11 @@ public class ProgressRepositoryImpl implements ProgressRepository{
     public ArrayList<Progress> findByHabitId(Long habitId) throws SQLException {
         ArrayList<Progress> progresses = new ArrayList<>();
 
-        String sql =
-                "SELECT * FROM domain.progresses " +
-                        "WHERE habit_id = ?";
+        String sql = SqlScripts.PROGRESS_FIND_BY_HABIT_ID;
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setLong(1, habitId);
             ResultSet resultSet = stmt.executeQuery();
-
-
 
             while (resultSet.next()) {
                 Progress progress = new Progress();
