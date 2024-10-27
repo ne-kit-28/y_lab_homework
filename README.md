@@ -1,6 +1,7 @@
 # y_lab_homework
 
 
-[Homework1](https://github.com/ne-kit-28/y_lab_homework/pull/1)  
+[Homework3](https://github.com/ne-kit-28/y_lab_homework/pull/3)  ПЛ
+
 
 
