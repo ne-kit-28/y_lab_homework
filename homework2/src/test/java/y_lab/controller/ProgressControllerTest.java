@@ -97,7 +97,7 @@ class ProgressControllerTest {
         when(request.getServletPath()).thenReturn("/api/progress");
         when(request.getParameter("habitId")).thenReturn("invalid_id");
         progressController.doGet(request, response);
-        verify(response).sendError(HttpServletResponse.SC_BAD_REQUEST, "Некорректный habitId");
+        verify(response).sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid habitId");
     }
 
     @Test
@@ -136,6 +136,6 @@ class ProgressControllerTest {
         when(request.getParameter("habitId")).thenReturn("invalid_id");
 
         progressController.doPost(request, response);
-        verify(response).sendError(HttpServletResponse.SC_BAD_REQUEST, "id is incorrect");
+        verify(response).sendError(HttpServletResponse.SC_BAD_REQUEST, "Id is incorrect");
     }
 }

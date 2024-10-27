@@ -9,6 +9,9 @@ import org.hibernate.validator.messageinterpolation.ParameterMessageInterpolator
 
 import java.util.Set;
 
+/**
+ * Utility class for validating Data Transfer Objects (DTO) using Jakarta Bean Validation.
+ */
 public class DtoValidator {
 
     private static final ValidatorFactory factory;
@@ -27,6 +30,12 @@ public class DtoValidator {
         }
     }
 
+    /**
+     * Validates the provided DTO.
+     *
+     * @param dto the Data Transfer Object to validate
+     * @throws IllegalArgumentException if any validation constraints are violated
+     */
     public static <T> void validate(T dto) throws IllegalArgumentException {
         Set<ConstraintViolation<T>> violations = validator.validate(dto);
         if (!violations.isEmpty()) {
@@ -38,4 +47,3 @@ public class DtoValidator {
         }
     }
 }
-

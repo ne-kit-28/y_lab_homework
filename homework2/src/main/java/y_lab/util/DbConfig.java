@@ -1,18 +1,24 @@
 package y_lab.util;
 
 import lombok.Getter;
-import lombok.Setter;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
+/**
+ * Configuration class for database connection parameters.
+ * It loads database configuration properties from the 'application.properties' file.
+ */
 @Getter
 public class DbConfig {
-    private String url;
-    private String user;
-    private String password;
+    private String url;      // Database URL
+    private String user;     // Database user
+    private String password; // Database password
 
+    /**
+     * Constructor that loads the database configuration from the properties file.
+     */
     public DbConfig() {
         Properties properties = new Properties();
         try (InputStream input = getClass().getClassLoader().getResourceAsStream("application.properties")) {

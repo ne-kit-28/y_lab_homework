@@ -284,11 +284,33 @@
     </dependency>
   </dependencies>
   <properties>
-    <java.version>17</java.version>
-    <maven.compiler.source>17</maven.compiler.source>
-    <junit.jupiter.version>5.8.1</junit.jupiter.version>
+    <jakarta.servlet.version>5.0.0</jakarta.servlet.version>
     <junit.platform.version>1.8.1</junit.platform.version>
-    <maven.compiler.target>17</maven.compiler.target>
+    <mockito.inline.version>5.2.0</mockito.inline.version>
+    <slf4j.version>2.0.7</slf4j.version>
+    <mapstruct.version>1.5.5.Final</mapstruct.version>
+    <logback.version>1.4.7</logback.version>
+    <jakarta.el.version>6.0.0</jakarta.el.version>
+    <project.lombok>1.18.30</project.lombok>
+    <maven.compiler.source>17</maven.compiler.source>
+    <jjwt.jackson.version>0.11.5</jjwt.jackson.version>
+    <jackson.databind.version>2.13.0</jackson.databind.version>
+    <aspectjweaver.version>1.9.7</aspectjweaver.version>
+    <jakarta.el.impl.version>3.0.4</jakarta.el.impl.version>
+    <jakarta.validation.version>3.0.2</jakarta.validation.version>
+    <testcontainers.version>1.19.0</testcontainers.version>
+    <postgresql.version>42.7.4</postgresql.version>
+    <hibernate.validator.version>8.0.1.Final</hibernate.validator.version>
+    <jjwt.version>0.9.1</jjwt.version>
+    <jjwt.impl.version>0.11.5</jjwt.impl.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <assertj.version>3.24.2</assertj.version>
+    <jjwt.api.version>0.11.5</jjwt.api.version>
+    <aspectjrt.version>1.9.9.1</aspectjrt.version>
+    <java.version>17</java.version>
+    <liquibase.version>4.17.0</liquibase.version>
+    <mockito.version>5.12.0</mockito.version>
+    <junit.jupiter.version>5.8.1</junit.jupiter.version>
+    <maven.compiler.target>17</maven.compiler.target>
   </properties>
 </project>

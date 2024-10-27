@@ -13,6 +13,21 @@ import java.io.IOException;
 import y_lab.domain.enums.Role;
 import y_lab.util.JwtUtil;
 
+/**
+ * The {@code JwtFilterRole} class is a servlet filter that validates the user role
+ * in the JWT token for incoming requests to specific API endpoints.
+ * This filter ensures that only users with the appropriate role (in this case,
+ * the {@code ADMINISTRATOR} role) can access certain resources.
+ *
+ * <p>This filter is applied to the following URL pattern:</p>
+ * <ul>
+ *     <li>{@code /api/user/all}</li>
+ * </ul>
+ *
+ * <p>If the JWT token is missing, invalid, or if the user's role does not match the
+ * required role, the filter will return an HTTP error response.</p>
+ */
+
 @WebFilter(urlPatterns = {
         "/api/user/all"
 })

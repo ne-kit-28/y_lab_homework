@@ -23,32 +23,47 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 
-@WebServlet(urlPatterns =
-        { "/api/login/signIn"
-        , "/api/login/signUp"
-        , "/api/login/password/request/*"
-        , "/api/login/password/reset/*" })
+/**
+ * Controller for managing user authentication and registration.
+ * <p>
+ * This controller handles HTTP requests for signing in, signing up, and managing
+ * password reset requests and actions.
+ * </p>
+ */
+@WebServlet(urlPatterns = {
+        "/api/login/signIn",
+        "/api/login/signUp",
+        "/api/login/password/request/*",
+        "/api/login/password/reset/*"
+})
 public class LoginController extends HttpServlet {
 
-    private final LoginMapper loginMapper = new LoginMapperImpl();;
-    LoginService loginService;
+    private final LoginMapper loginMapper = new LoginMapperImpl();
+    private LoginService loginService;
 
     @Override
     public void init() throws ServletException {
         loginService = (LoginServiceImpl) getServletContext().getAttribute("loginService");
     }
 
+    /**
+     * Handles POST requests for user authentication and registration.
+     *
+     * @param req  the HttpServletRequest object representing the client's request
+     * @param resp the HttpServletResponse object representing the server's response
+     * @throws ServletException if an error occurs while processing the request
+     * @throws IOException      if an error occurs while reading from the request or writing to the response
+     */
     @Override
     @LogExecutionTime
-    @AuditAction(action = "Попытка авторизации")
+    @AuditAction(action = "Attempt to authorize")
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
         if ("/api/login/signIn".equals(req.getServletPath())) {
-
-            // Чтение JSON from req
+            // Read JSON from the request
             StringBuilder sb = new StringBuilder();
             String line;
             try (BufferedReader reader = req.getReader()) {
@@ -57,7 +72,6 @@ public class LoginController extends HttpServlet {
                 }
             }
 
-            // Преобразование JSON в user
             String json = sb.toString();
             ObjectMapper objectMapper = new ObjectMapper();
             LoginInDto loginInDto = objectMapper.readValue(json, LoginInDto.class);
@@ -71,9 +85,9 @@ public class LoginController extends HttpServlet {
                     String token = JwtUtil.generateToken(loginResponseDto.id(), loginResponseDto.role());
                     resp.setHeader("Authorization", "Bearer " + token);
 
-                    resp.setStatus(HttpServletResponse.SC_OK); //200 ok
+                    resp.setStatus(HttpServletResponse.SC_OK); // 200 OK
                     PrintWriter out = resp.getWriter();
-                    out.print(loginResponseDto.id()); // Отправляем id
+                    out.print(loginResponseDto.id());
                     out.flush();
                 } else {
                     resp.sendError(HttpServletResponse.SC_CONFLICT, loginResponseDto.message());
@@ -83,8 +97,7 @@ public class LoginController extends HttpServlet {
                 resp.getWriter().write("{\"error\":\"" + e.getMessage() + "\"}");
             }
 
-        } else if ("/api/login/signUp".equals(req.getServletPath())) { // Проверка, что userId содержит Id
-            // Чтение JSON from req
+        } else if ("/api/login/signUp".equals(req.getServletPath())) {
             StringBuilder sb = new StringBuilder();
             String line;
             try (BufferedReader reader = req.getReader()) {
@@ -93,7 +106,6 @@ public class LoginController extends HttpServlet {
                 }
             }
 
-            // Преобразование JSON в user
             String json = sb.toString();
             ObjectMapper objectMapper = new ObjectMapper();
             LoginUpDto loginUpDto = objectMapper.readValue(json, LoginUpDto.class);
@@ -104,7 +116,7 @@ public class LoginController extends HttpServlet {
                 LoginResponseDto loginResponseDto = loginService.register(loginMapper.loginUpDtoToUser(loginUpDto));
 
                 if (loginResponseDto.id() != -1L) {
-                    resp.setStatus(HttpServletResponse.SC_CREATED); //201 created
+                    resp.setStatus(HttpServletResponse.SC_CREATED); // 201 Created
                     PrintWriter out = resp.getWriter();
 
                     String jsonResponse = objectMapper.writeValueAsString(loginResponseDto);
@@ -124,17 +136,17 @@ public class LoginController extends HttpServlet {
 
             boolean res = loginService.requestPasswordReset(email);
 
-            if (res){
-                resp.setStatus(HttpServletResponse.SC_CREATED); //201 Created
+            if (res) {
+                resp.setStatus(HttpServletResponse.SC_CREATED); // 201 Created
                 PrintWriter out = resp.getWriter();
-                out.print(true); // Отправляем id
+                out.print(true); // Send success response
                 out.flush();
-            } else
-                resp.sendError(HttpServletResponse.SC_CONFLICT, "error email");
+            } else {
+                resp.sendError(HttpServletResponse.SC_CONFLICT, "Error with email");
+            }
 
         } else if ("/api/login/password/reset".equals(req.getServletPath())) {
-
-            // Чтение JSON from req
+            // Read JSON from the request
             StringBuilder sb = new StringBuilder();
             String line;
             try (BufferedReader reader = req.getReader()) {
@@ -143,7 +155,6 @@ public class LoginController extends HttpServlet {
                 }
             }
 
-            // Преобразование JSON в user
             String json = sb.toString();
             ObjectMapper objectMapper = new ObjectMapper();
             LoginResetDto loginResetDto = objectMapper.readValue(json, LoginResetDto.class);
@@ -153,22 +164,23 @@ public class LoginController extends HttpServlet {
 
                 LoginResponseDto res = loginService.resetPassword(loginMapper.loginResetDtoToUser(loginResetDto));
 
-                if (res.id() != -1L){
-                    resp.setStatus(HttpServletResponse.SC_CREATED); //201 Created
+                if (res.id() != -1L) {
+                    resp.setStatus(HttpServletResponse.SC_CREATED); // 201 Created
                     PrintWriter out = resp.getWriter();
 
                     String jsonResponse = objectMapper.writeValueAsString(res);
 
-                    out.print(jsonResponse); // Отправляем id
+                    out.print(jsonResponse);
                     out.flush();
-                } else
+                } else {
                     resp.sendError(HttpServletResponse.SC_CONFLICT, res.message());
+                }
 
             } catch (IllegalArgumentException e) {
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 resp.getWriter().write("{\"error\":\"" + e.getMessage() + "\"}");
             }
-        }else {
+        } else {
             resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Path not found");
         }
     }

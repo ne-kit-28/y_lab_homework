@@ -45,8 +45,6 @@ class UserControllerTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        userController.userService = userService;
-        userController.userMapper = userMapper;
     }
 
     @Test
@@ -129,7 +127,7 @@ class UserControllerTest {
 
         userController.doPut(request, response);
 
-        verify(response).sendError(HttpServletResponse.SC_CONFLICT, "User was not update");
+        verify(response).sendError(HttpServletResponse.SC_CONFLICT, "User was not updated");
     }
 
     @Test
@@ -159,6 +157,6 @@ class UserControllerTest {
 
         userController.doDelete(request, response);
 
-        verify(response).sendError(HttpServletResponse.SC_CONFLICT, "Nothing delete");
+        verify(response).sendError(HttpServletResponse.SC_CONFLICT, "Nothing deleted");
     }
 }

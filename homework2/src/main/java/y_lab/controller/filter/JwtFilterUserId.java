@@ -14,6 +14,22 @@ import java.io.IOException;
 import y_lab.domain.enums.Role;
 import y_lab.util.JwtUtil;
 
+/**
+ * The {@code JwtFilterUserId} class is a servlet filter that checks for a valid JWT token
+ * in incoming requests for specific API endpoints. It ensures that the user ID in the request
+ * matches the user ID embedded in the token or that the user has administrator privileges.
+ *
+ * <p>This filter is applied to the following URL patterns:</p>
+ * <ul>
+ *     <li>{@code /api/user}</li>
+ *     <li>{@code /api/habit/*}</li>
+ *     <li>{@code /api/progress/*}</li>
+ * </ul>
+ *
+ * <p>On detecting an invalid token or a mismatch between the user ID in the token and the request,
+ * the filter will return an HTTP error response.</p>
+ */
+
 @WebFilter(urlPatterns = {
         "/api/user"
         , "/api/habit/*"

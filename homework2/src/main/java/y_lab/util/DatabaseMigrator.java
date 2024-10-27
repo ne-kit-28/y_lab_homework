@@ -11,13 +11,26 @@ import liquibase.resource.ClassLoaderResourceAccessor;
 
 import java.sql.Connection;
 
+/**
+ * Class responsible for managing database migrations using Liquibase.
+ */
 public class DatabaseMigrator {
-    private final Connection connection;
+    private final Connection connection; // Database connection
 
+    /**
+     * Constructs a DatabaseMigrator with the specified database connection.
+     *
+     * @param connection the database connection to be used for migrations
+     */
     public DatabaseMigrator(Connection connection) {
         this.connection = connection;
     }
 
+    /**
+     * Executes the migration process using Liquibase.
+     * This method updates the database schema based on the changes defined in the
+     * Liquibase changelog file.
+     */
     public void migrate() {
         Database database;
         try {

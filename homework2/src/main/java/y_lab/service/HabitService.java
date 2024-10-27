@@ -49,12 +49,18 @@ public interface HabitService {
      *
      * @param habitName the name of the habit to retrieve
      * @param userId    the ID of the user
-     * @return the ID of the habit if found, otherwise -1
+     * @return the Optional of the habit if found, otherwise empty
      */
     @LogExecutionTime
     @AuditAction(action = "Получение привычки по имени")
     Optional<Habit> getHabit(String habitName, Long userId);
 
+    /**
+     * Retrieves a habit by its ID.
+     *
+     * @param habitId    the ID of the habit
+     * @return the Optional of the habit if found, otherwise empty
+     */
     @LogExecutionTime
     @AuditAction(action = "Получение привычки по id")
     Optional<Habit> getHabit(Long habitId);

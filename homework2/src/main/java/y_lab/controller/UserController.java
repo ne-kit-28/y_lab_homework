@@ -22,31 +22,44 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Optional;
 
+/**
+ * Controller for managing users.
+ * <p>
+ * This controller handles HTTP requests related to users, including retrieval,
+ * updating, and deleting users.
+ * </p>
+ */
 @WebServlet(urlPatterns = {"/api/user/all", "/api/user/*"})
 public class UserController extends HttpServlet {
 
-    UserService userService;
-    UserMapper userMapper = new UserMapperImpl();
+    private UserService userService;
+    private UserMapper userMapper = new UserMapperImpl();
 
     @Override
     public void init() throws ServletException {
         userService = (UserServiceImpl) getServletContext().getAttribute("userService");
 
         if (userService == null) {
-            throw new ServletException("userService не инициализированы");
+            throw new ServletException("userService is not initialized");
         }
     }
 
+    /**
+     * Handles GET requests to retrieve user information.
+     *
+     * @param req  the HttpServletRequest object representing the client's request
+     * @param resp the HttpServletResponse object representing the server's response
+     * @throws ServletException if an error occurs while processing the request
+     * @throws IOException      if an error occurs while writing to the response
+     */
     @Override
     @LogExecutionTime
-    @AuditAction(action = "Попытка получения пользователя(-лей)")
+    @AuditAction(action = "Attempt to retrieve user(s)")
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
         if ("/api/user/all".equals(req.getServletPath())) {
-
             ObjectMapper objectMapper = new ObjectMapper();
             String jsonResponse = objectMapper.writeValueAsString(
                     userMapper.usersToUserResponseDtos(
@@ -54,7 +67,7 @@ public class UserController extends HttpServlet {
 
             resp.setStatus(HttpServletResponse.SC_OK);
             resp.getWriter().write(jsonResponse);
-        } else if (EmailValidator.isValid(req.getParameter("email"))) { // валидация email
+        } else if (EmailValidator.isValid(req.getParameter("email"))) { // Email validation
             String email = req.getParameter("email");
 
             Optional<User> user = userService.getUser(email);
@@ -73,11 +86,18 @@ public class UserController extends HttpServlet {
         }
     }
 
+    /**
+     * Handles PUT requests to update user information.
+     *
+     * @param req  the HttpServletRequest object representing the client's request
+     * @param resp the HttpServletResponse object representing the server's response
+     * @throws ServletException if an error occurs while processing the request
+     * @throws IOException      if an error occurs while writing to the response
+     */
     @Override
     @LogExecutionTime
-    @AuditAction(action = "Попытка изменения пользователя")
+    @AuditAction(action = "Attempt to update user")
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
@@ -98,15 +118,15 @@ public class UserController extends HttpServlet {
         try {
             DtoValidator.validate(userRequestDto);
 
-            boolean upd = userService.editUser(userId, userMapper.userRequestDtoToUser(userRequestDto));
+            boolean updated = userService.editUser(userId, userMapper.userRequestDtoToUser(userRequestDto));
 
-            if (upd) {
-                resp.setStatus(HttpServletResponse.SC_OK); //200 ok
+            if (updated) {
+                resp.setStatus(HttpServletResponse.SC_OK); // 200 OK
                 PrintWriter out = resp.getWriter();
                 out.print(true);
                 out.flush();
             } else {
-                resp.sendError(HttpServletResponse.SC_CONFLICT, "User was not update");
+                resp.sendError(HttpServletResponse.SC_CONFLICT, "User was not updated");
             }
 
         } catch (IllegalArgumentException e) {
@@ -115,24 +135,32 @@ public class UserController extends HttpServlet {
         }
     }
 
+    /**
+     * Handles DELETE requests to remove a user.
+     *
+     * @param req  the HttpServletRequest object representing the client's request
+     * @param resp the HttpServletResponse object representing the server's response
+     * @throws ServletException if an error occurs while processing the request
+     * @throws IOException      if an error occurs while writing to the response
+     */
     @Override
     @LogExecutionTime
-    @AuditAction(action = "Попытка удаления пользователя")
+    @AuditAction(action = "Attempt to delete user")
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
         Long userId = Long.parseLong(req.getParameter("userId"));
 
-        boolean upd = userService.deleteUser(userId);
+        boolean deleted = userService.deleteUser(userId);
 
-        if (upd) {
-            resp.setStatus(HttpServletResponse.SC_OK); //200 ok
+        if (deleted) {
+            resp.setStatus(HttpServletResponse.SC_OK); // 200 OK
             PrintWriter out = resp.getWriter();
             out.print(true);
             out.flush();
         } else {
-            resp.sendError(HttpServletResponse.SC_CONFLICT, "Nothing delete");
+            resp.sendError(HttpServletResponse.SC_CONFLICT, "Nothing deleted");
         }
     }
 }

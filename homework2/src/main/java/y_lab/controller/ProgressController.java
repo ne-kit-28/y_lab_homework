@@ -18,15 +18,21 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Optional;
 
-@WebServlet(urlPatterns =
-        {
-                "/api/progress/create/*"
-                , "/api/progress/*"
-        })
+/**
+ * Controller for managing progress related to habits.
+ * <p>
+ * This controller handles HTTP requests related to habit progress, including
+ * retrieving progress information and marking habits as completed.
+ * </p>
+ */
+@WebServlet(urlPatterns = {
+        "/api/progress/create/*",
+        "/api/progress/*"
+})
 public class ProgressController extends HttpServlet {
 
-    ProgressService progressService;
-    HabitService habitService;
+    private ProgressService progressService;
+    private HabitService habitService;
 
     @Override
     public void init() throws ServletException {
@@ -34,9 +40,17 @@ public class ProgressController extends HttpServlet {
         habitService = (HabitServiceImpl) getServletContext().getAttribute("habitService");
     }
 
+    /**
+     * Handles GET requests to retrieve progress information for a specific habit.
+     *
+     * @param req  the HttpServletRequest object representing the client's request
+     * @param resp the HttpServletResponse object representing the server's response
+     * @throws ServletException if an error occurs while processing the request
+     * @throws IOException      if an error occurs while writing to the response
+     */
     @Override
     @LogExecutionTime
-    @AuditAction(action = "Попытка получения информации о выполнении")
+    @AuditAction(action = "Attempt to retrieve progress information")
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
         resp.setContentType("application/json");
@@ -93,32 +107,44 @@ public class ProgressController extends HttpServlet {
 
                     out.print(jsonResponse);
                     out.flush();
-                } else
-                    resp.sendError(HttpServletResponse.SC_NOT_FOUND, "type is incorrect");
-            } else
+                } else {
+                    resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Type is incorrect");
+                }
+            } else {
                 resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Path not found");
+            }
         } catch (NumberFormatException e) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Некорректный habitId");
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid habitId");
         }
     }
 
+    /**
+     * Handles POST requests to mark a habit as completed.
+     *
+     * @param req  the HttpServletRequest object representing the client's request
+     * @param resp the HttpServletResponse object representing the server's response
+     * @throws ServletException if an error occurs while processing the request
+     * @throws IOException      if an error occurs while writing to the response
+     */
     @Override
     @LogExecutionTime
-    @AuditAction(action = "Попытка отметить выполнение привычки")
+    @AuditAction(action = "Attempt to mark habit as completed")
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
         if ("/api/progress/create".equals(req.getServletPath())) {
             try {
-                if (progressService.createProgress(Long.parseLong(req.getParameter("habitId"))))
+                if (progressService.createProgress(Long.parseLong(req.getParameter("habitId")))) {
                     resp.setStatus(HttpServletResponse.SC_CREATED);
-                else
+                } else {
                     resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Habit with such id not found");
+                }
             } catch (NumberFormatException ex) {
-                resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "id is incorrect");
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Id is incorrect");
             }
-        } else
+        } else {
             resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Path not found");
+        }
     }
 }
