@@ -1,5 +1,7 @@
 package y_lab.service.serviceImpl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import y_lab.domain.Habit;
 import y_lab.domain.Progress;
 import y_lab.domain.enums.Frequency;
@@ -23,6 +25,7 @@ public class ProgressServiceImpl implements ProgressService {
     private final HabitRepository habitRepository;
     private final ProgressRepository progressRepository;
     private final Connection connection;
+    private static final Logger logger = LoggerFactory.getLogger(ProgressServiceImpl.class);
 
     public ProgressServiceImpl(
             HabitRepositoryImpl habitRepository
@@ -61,7 +64,7 @@ public class ProgressServiceImpl implements ProgressService {
 
             connection.commit();
 
-            System.out.println("The habit is complete");
+            logger.info("The habit is complete");
             return true;
         } catch (SQLException e) {
             try {

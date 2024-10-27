@@ -1,5 +1,7 @@
 package y_lab.service.serviceImpl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import y_lab.domain.User;
 import y_lab.domain.enums.Frequency;
 import y_lab.domain.Habit;
@@ -24,6 +26,7 @@ public class ExecutorServiceImpl implements ExecutorService, AutoCloseable {
     private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    private static final Logger logger = LoggerFactory.getLogger(ExecutorServiceImpl.class);
 
     public ExecutorServiceImpl(HabitRepositoryImpl habitRepository, UserRepositoryImpl userRepository, NotificationService notificationService) {
         this.habitRepository = habitRepository;
@@ -44,7 +47,7 @@ public class ExecutorServiceImpl implements ExecutorService, AutoCloseable {
                     }
                 }
             } catch (SQLException e) {
-                System.out.println("Sql error in startScheduler");
+                logger.info("Sql error in startScheduler");
             }
         }, 0, 1, TimeUnit.DAYS); // Check reminders every day
     }

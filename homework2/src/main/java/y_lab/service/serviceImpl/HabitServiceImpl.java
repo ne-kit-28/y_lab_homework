@@ -1,5 +1,7 @@
 package y_lab.service.serviceImpl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import y_lab.domain.Habit;
 import y_lab.domain.User;
 import y_lab.domain.enums.Frequency;
@@ -22,6 +24,7 @@ public class HabitServiceImpl implements HabitService {
     private final HabitRepository habitRepository;
     private final ProgressRepository progressRepository;
     private final Connection connection;
+    private static final Logger logger = LoggerFactory.getLogger(HabitServiceImpl.class);
 
     public HabitServiceImpl(HabitRepositoryImpl habitRepository
             , ProgressRepositoryImpl progressRepository
@@ -40,14 +43,14 @@ public class HabitServiceImpl implements HabitService {
             connection.setAutoCommit(false);
 
             if (habitRepository.findByName(habit.getName(), userId).isPresent()) {
-                System.out.println("Habit with such name exists");
-                System.out.println("Habit is not created");
+                logger.info("Habit with such name exists");
+                logger.info("Habit is not created");
             } else {
                 habit.setCreatedAt(LocalDate.now());
                 habit.setUserId(userId);
                 habitRepository.save(habit);
                 habitId = habitRepository.findByName(habit.getName(), userId).get().getId();
-                System.out.println("Habit " + habit.getName() + " is created!");
+                logger.info("Habit " + habit.getName() + " is created!");
             }
 
             connection.commit();
@@ -78,7 +81,7 @@ public class HabitServiceImpl implements HabitService {
 
             habitRepository.delete(id);
             progressRepository.deleteAllByHabitId(id);
-            System.out.println("Habit with id: " + id + " was deleted!");
+            logger.info("Habit with id: " + id + " was deleted!");
 
             connection.commit();
             del = true;
@@ -123,14 +126,13 @@ public class HabitServiceImpl implements HabitService {
                         .toList());
 
             if (habits.isEmpty()) {
-                System.out.println("No habits");
+                logger.info("No habits");
             } else {
                 for (Habit habit : habits) {
-                    System.out.println("Name: " + habit.getName());
-                    System.out.println("Description: " + habit.getDescription());
-                    System.out.println("Created at: " + habit.getCreatedAt());
-                    System.out.println("Frequency: " + habit.getFrequency().toString());
-                    System.out.println();
+                    logger.info("Name: " + habit.getName());
+                    logger.info("Description: " + habit.getDescription());
+                    logger.info("Created at: " + habit.getCreatedAt());
+                    logger.info("Frequency: " + habit.getFrequency().toString() + '\n');
                 }
             }
 
@@ -160,12 +162,12 @@ public class HabitServiceImpl implements HabitService {
 
             Optional<Habit> habit = habitRepository.findByName(habitName, userId);
             if (habit.isPresent()) {
-                System.out.println("Name: " + habit.get().getName());
-                System.out.println("Description: " + habit.get().getDescription());
-                System.out.println("Created at: " + habit.get().getCreatedAt());
-                System.out.println("Frequency: " + habit.get().getFrequency().toString());
+                logger.info("Name: " + habit.get().getName());
+                logger.info("Description: " + habit.get().getDescription());
+                logger.info("Created at: " + habit.get().getCreatedAt());
+                logger.info("Frequency: " + habit.get().getFrequency().toString() + '\n');
             } else
-                System.out.println("No such habit");
+                logger.info("No such habit");
 
             connection.commit();
             return habit;
@@ -193,12 +195,12 @@ public class HabitServiceImpl implements HabitService {
 
             Optional<Habit> habit = habitRepository.findById(habitId);
             if (habit.isPresent()) {
-                System.out.println("Name: " + habit.get().getName());
-                System.out.println("Description: " + habit.get().getDescription());
-                System.out.println("Created at: " + habit.get().getCreatedAt());
-                System.out.println("Frequency: " + habit.get().getFrequency().toString());
+                logger.info("Name: " + habit.get().getName());
+                logger.info("Description: " + habit.get().getDescription());
+                logger.info("Created at: " + habit.get().getCreatedAt());
+                logger.info("Frequency: " + habit.get().getFrequency().toString() + '\n');
             } else
-                System.out.println("No such habit");
+                logger.info("No such habit");
 
             connection.commit();
             return habit;
@@ -230,28 +232,22 @@ public class HabitServiceImpl implements HabitService {
             Optional<Habit> habit = habitRepository.findById(id);
 
             if (habit.isEmpty()) {
-                System.out.println("Habit with this id does not exist!");
+                logger.info("Habit with this id does not exist!");
                 return false;
             }
 
             // Check for the uniqueness of the new name
             if (newHabit.getName() != null && !newHabit.getName().isEmpty() && habitRepository.findByName(newHabit.getName(), habit.get().getUserId()).isPresent()) {
-                System.out.println("Name already in use by another account!");
+                logger.info("Name already in use by another account!");
                 return false;
             }
 
-            if (newHabit.getName() != null && !newHabit.getName().isEmpty()) {
-                habit.get().setName(newHabit.getName());
-            }
-            if (newHabit.getDescription() != null && !newHabit.getDescription().isEmpty()) {
-                habit.get().setDescription(newHabit.getDescription());
-            }
-            if (newHabit.getFrequency() != null) {
-                habit.get().setFrequency(newHabit.getFrequency());
-            }
+            habit.get().setName(newHabit.getName());
+            habit.get().setDescription(newHabit.getDescription());
+            habit.get().setFrequency(newHabit.getFrequency());
 
             habitRepository.update(id, habit.get());
-            System.out.println("Habit updated successfully!");
+            logger.info("Habit updated successfully!");
 
             connection.commit();
             upd = true;

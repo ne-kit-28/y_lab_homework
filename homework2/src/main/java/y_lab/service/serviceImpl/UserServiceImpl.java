@@ -1,5 +1,7 @@
 package y_lab.service.serviceImpl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import y_lab.domain.User;
 import y_lab.domain.enums.Role;
 import y_lab.repository.HabitRepository;
@@ -23,6 +25,8 @@ public class UserServiceImpl implements UserService {
     private final HabitRepository habitRepository;
     private final ProgressRepository progressRepository;
     private final Connection connection;
+    private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
+
 
     public UserServiceImpl(
             UserRepositoryImpl userRepository
@@ -35,6 +39,26 @@ public class UserServiceImpl implements UserService {
         this.connection = connection;
     }
 
+    //Проверка на возможность обновить пользователя
+    private boolean checkUser(User user, long id) throws SQLException {
+
+        Optional<User> myUser = userRepository.findById(id);
+        if (myUser.isEmpty()) {
+            logger.info("User with this id does not exist!");
+            return false;
+        }
+        // Check for unique new email
+        if (user.getEmail() != null && !user.getEmail().isEmpty() && userRepository.findByEmail(user.getEmail()).isPresent()) {
+            logger.info("Email already in use by another account!");
+            return false;
+        }
+        if (user.getEmail() != null && !user.getEmail().isEmpty() && !EmailValidator.isValid(user.getEmail())) {
+            logger.info("Email is incorrect!");
+            return false;
+        }
+        return true;
+    }
+
     @Override
     public boolean editUser(Long id, User user) {
 
@@ -45,34 +69,18 @@ public class UserServiceImpl implements UserService {
 
             Optional<User> myUser = userRepository.findById(id);
 
-            if (myUser.isEmpty()) {
-                System.out.println("User with this id does not exist!");
+            if (!checkUser(user, id)) //валидация
                 return false;
-            }
 
-            // Check for unique new email
-            if (user.getEmail() != null && !user.getEmail().isEmpty() && userRepository.findByEmail(user.getEmail()).isPresent()) {
-                System.out.println("Email already in use by another account!");
-                return false;
-            }
-
-            if (user.getEmail() != null && !user.getEmail().isEmpty() && !EmailValidator.isValid(user.getEmail())) {
-                System.out.println("Email is incorrect!");
-                return false;
-            }
-
-            if (user.getName() != null && !user.getName().isEmpty())
-                myUser.get().setName(user.getName());
-            if (user.getEmail() != null && !user.getEmail().isEmpty())
-                myUser.get().setEmail(user.getEmail());
-            if (user.getPasswordHash() != null && !user.getPasswordHash().isEmpty())
-                myUser.get().setPasswordHash(user.getPasswordHash());
+            myUser.get().setName(user.getName());
+            myUser.get().setEmail(user.getEmail());
+            myUser.get().setPasswordHash(user.getPasswordHash());
 
             userRepository.update(myUser.get().getId(), myUser.get());
 
             connection.commit();
 
-            System.out.println("Profile updated successfully!");
+            logger.info("Profile updated successfully!");
             edit = true;
         } catch (SQLException e) {
             try {
@@ -112,7 +120,7 @@ public class UserServiceImpl implements UserService {
 
             connection.commit();
 
-            System.out.println("Profile block is " + user.isBlock());
+            logger.info("Profile block is " + user.isBlock());
             edit = true;
         } catch (SQLException e) {
             try {
@@ -145,7 +153,7 @@ public class UserServiceImpl implements UserService {
 
             connection.commit();
 
-            System.out.println("User and all habits were deleted!");
+            logger.info("User and all habits were deleted!");
             edit = true;
         } catch (SQLException e) {
             try {
@@ -205,13 +213,12 @@ public class UserServiceImpl implements UserService {
                     .toList());
 
             if (users.isEmpty()) {
-                System.out.println("No users");
+                logger.info("No users");
             } else {
                 for (User user : users) {
-                    System.out.println("Email: " + user.getEmail());
-                    System.out.println("Name: " + user.getName());
-                    System.out.println("Is blocked: " + user.isBlock());
-                    System.out.println();
+                    logger.info("Email: " + user.getEmail());
+                    logger.info("Name: " + user.getName());
+                    logger.info("Is blocked: " + user.isBlock() + '\n');
                 }
             }
 

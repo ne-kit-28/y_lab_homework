@@ -1,5 +1,7 @@
 package y_lab.service.serviceImpl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import y_lab.domain.User;
 import y_lab.domain.enums.Role;
 import y_lab.dto.LoginResponseDto;
@@ -16,6 +18,7 @@ import java.util.UUID;
 public class LoginServiceImpl implements LoginService {
     private final UserRepository userRepository;
     private  final Connection connection;
+    private static final Logger logger = LoggerFactory.getLogger(LoginServiceImpl.class);
 
     public LoginServiceImpl(UserRepository userRepository, Connection connection) {
         this.userRepository = userRepository;
@@ -30,29 +33,29 @@ public class LoginServiceImpl implements LoginService {
 
             Optional<User> newUser = userRepository.findByEmail(user.getEmail());
             if (newUser.isEmpty()) {
-                System.out.println("User with this email does not exist!");
+                logger.info("User with this email does not exist!");
                 return new LoginResponseDto(-1L, user.getEmail(), "", Role.UNAUTHORIZED.getValue(),"User with this email does not exist!");
             }
 
             if (!newUser.get().getPasswordHash().equals(user.getPasswordHash())) {
-                System.out.println("Incorrect password!");
+                logger.info("Incorrect password!");
                 return new LoginResponseDto(-1L, user.getEmail(), "", Role.UNAUTHORIZED.getValue(), "Incorrect password!");
             }
 
             if (newUser.get().isBlock()) {
-                System.out.println("Your account is blocked!");
+                logger.info("Your account is blocked!");
                 return new LoginResponseDto(-1L, user.getEmail(), "", Role.UNAUTHORIZED.getValue(), "Your account is blocked!");
             }
 
             connection.commit();
 
-            System.out.println("Login successful! Welcome, " + newUser.get().getName());
+            logger.info("Login successful! Welcome, " + newUser.get().getName());
             return new LoginResponseDto(newUser.get().getId(), user.getEmail(), "", newUser.get().getRole().getValue(), "Successful!");
 
         } catch (SQLException e) {
             try {
                 connection.rollback();
-                System.out.println("SQL error in loginService");
+                logger.info("SQL error in loginService");
             } catch (SQLException rollbackEx) {
                 rollbackEx.printStackTrace();
             }
@@ -87,12 +90,12 @@ public class LoginServiceImpl implements LoginService {
 
             Optional<User> newUser = userRepository.findByEmail(user.getEmail());
             if (newUser.isEmpty()) {
-                System.out.println("User with this email does not exist!");
+                logger.info("User with this email does not exist!");
                 return new LoginResponseDto(-1L, user.getEmail(), "", Role.UNAUTHORIZED.getValue(),"User with this email does not exist!");
             }
 
             if (!user.getResetToken().equals(newUser.get().getResetToken())) {
-                System.out.println("Invalid resetToken!");
+                logger.info("Invalid resetToken!");
                 return new LoginResponseDto(-1L, user.getEmail(), "", Role.UNAUTHORIZED.getValue(), "Invalid resetToken!");
             }
 
@@ -105,7 +108,7 @@ public class LoginServiceImpl implements LoginService {
 
             connection.commit();
 
-            System.out.println("Password has been successfully reset!");
+            logger.info("Password has been successfully reset!");
             return new LoginResponseDto(newUser.get().getId(), user.getEmail(), password, newUser.get().getRole().getValue(),"Successful!");
         } catch (SQLException e) {
             try {
@@ -134,7 +137,7 @@ public class LoginServiceImpl implements LoginService {
 
             Optional<User> user = userRepository.findByEmail(email);
             if (user.isEmpty()) {
-                System.out.println("User with this email does not exist!");
+                logger.info("User with this email does not exist!");
                 return false;
             }
 
@@ -148,7 +151,7 @@ public class LoginServiceImpl implements LoginService {
             connection.commit();
 
 
-            System.out.println("Password reset resetToken sent to your email.");
+            logger.info("Password reset resetToken sent to your email.");
             res = true;
         } catch (SQLException e) {
             try {
@@ -176,12 +179,12 @@ public class LoginServiceImpl implements LoginService {
             connection.setAutoCommit(false);
 
             if (!EmailValidator.isValid(user.getEmail())) {
-                System.out.println("Email is incorrect!");
+                logger.info("Email is incorrect!");
                 return new LoginResponseDto(-1L, user.getEmail(), "", Role.UNAUTHORIZED.getValue(), "Email is incorrect!");
             }
 
             if (userRepository.isEmailExist(user.getEmail())) {
-                System.out.println("User with this email already exists!");
+                logger.info("User with this email already exists!");
                 return new LoginResponseDto(-1L, user.getEmail(), "", Role.UNAUTHORIZED.getValue(), "User with this email already exists!");
             }
 
@@ -199,7 +202,7 @@ public class LoginServiceImpl implements LoginService {
 
             connection.commit();
 
-            System.out.println("Registration successful!");
+            logger.info("Registration successful!");
             return new LoginResponseDto(regUser.getId(), regUser.getEmail(), "", regUser.getRole().getValue(), "Successful!");
         } catch (SQLException e) {
             try {
