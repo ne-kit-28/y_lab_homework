@@ -2,6 +2,9 @@ package y_lab.service.serviceImpl;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.ConnectionCallback;
+import org.springframework.stereotype.Service;
 import y_lab.domain.Habit;
 import y_lab.domain.User;
 import y_lab.domain.enums.Frequency;
@@ -12,6 +15,7 @@ import y_lab.repository.repositoryImpl.ProgressRepositoryImpl;
 import y_lab.repository.repositoryImpl.UserRepositoryImpl;
 import y_lab.service.HabitService;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -20,18 +24,20 @@ import java.util.Comparator;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
+@Service
 public class HabitServiceImpl implements HabitService {
     private final HabitRepository habitRepository;
     private final ProgressRepository progressRepository;
     private final Connection connection;
     private static final Logger logger = LoggerFactory.getLogger(HabitServiceImpl.class);
 
+    @Autowired
     public HabitServiceImpl(HabitRepositoryImpl habitRepository
             , ProgressRepositoryImpl progressRepository
-            , Connection connection) {
+            , DataSource dataSource) throws SQLException {
         this.habitRepository = habitRepository;
         this.progressRepository = progressRepository;
-        this.connection = connection;
+        this.connection = dataSource.getConnection();
     }
 
     @Override

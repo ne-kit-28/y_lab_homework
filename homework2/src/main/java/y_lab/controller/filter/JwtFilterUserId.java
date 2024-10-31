@@ -30,11 +30,6 @@ import y_lab.util.JwtUtil;
  * the filter will return an HTTP error response.</p>
  */
 
-@WebFilter(urlPatterns = {
-        "/api/user"
-        , "/api/habit/*"
-        , "/api/progress/*"
-})
 public class JwtFilterUserId implements Filter {
 
     @Override

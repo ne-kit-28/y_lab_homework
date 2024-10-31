@@ -28,9 +28,6 @@ import y_lab.util.JwtUtil;
  * required role, the filter will return an HTTP error response.</p>
  */
 
-@WebFilter(urlPatterns = {
-        "/api/user/all"
-})
 public class JwtFilterRole implements Filter {
 
     @Override

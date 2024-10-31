@@ -2,6 +2,8 @@ package y_lab.service.serviceImpl;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import y_lab.domain.User;
 import y_lab.domain.enums.Role;
 import y_lab.repository.HabitRepository;
@@ -14,12 +16,14 @@ import y_lab.service.UserService;
 import y_lab.util.EmailValidator;
 import y_lab.util.HashFunction;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
+@Service
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final HabitRepository habitRepository;
@@ -27,16 +31,16 @@ public class UserServiceImpl implements UserService {
     private final Connection connection;
     private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
 
-
+    @Autowired
     public UserServiceImpl(
             UserRepositoryImpl userRepository
             , HabitRepositoryImpl habitRepository
             , ProgressRepositoryImpl progressRepository
-            , Connection connection) {
+            , DataSource dataSource) throws SQLException {
         this.userRepository = userRepository;
         this.habitRepository = habitRepository;
         this.progressRepository = progressRepository;
-        this.connection = connection;
+        this.connection = dataSource.getConnection();
     }
 
     //Проверка на возможность обновить пользователя

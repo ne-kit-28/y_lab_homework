@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: habits
+  datasource:
+    url: jdbc:postgresql://localhost:5433/y_lab
+    username: y_lab_user
+    password: y_lab_user
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml

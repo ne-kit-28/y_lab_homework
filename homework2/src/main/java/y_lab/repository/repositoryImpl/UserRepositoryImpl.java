@@ -2,28 +2,34 @@ package y_lab.repository.repositoryImpl;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
 import y_lab.domain.User;
 import y_lab.domain.enums.Role;
 import y_lab.repository.SqlScripts;
 import y_lab.repository.UserRepository;
 
+import javax.sql.DataSource;
 import java.sql.*;
 import java.util.*;
 
 @Getter
 @Setter
+@Repository
 public class UserRepositoryImpl implements UserRepository {
-    private final Connection connection;
+    private final DataSource dataSource;
 
-    public UserRepositoryImpl(Connection connection) {
-        this.connection = connection;
+    @Autowired
+    public UserRepositoryImpl(DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     @Override
     public boolean isEmailExist(String email) throws SQLException {
         String sql = SqlScripts.USER_IS_EMAIL_EXIST;
 
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, email);
             ResultSet resultSet = stmt.executeQuery();
 
@@ -39,7 +45,8 @@ public class UserRepositoryImpl implements UserRepository {
     public boolean isAdminEmail(String email) throws SQLException{
         String sql = SqlScripts.USER_IS_ADMIN_EMAIL;
 
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, email);
             ResultSet resultSet = stmt.executeQuery();
 
@@ -55,7 +62,8 @@ public class UserRepositoryImpl implements UserRepository {
     public void save(User user) throws SQLException {
         String sql = SqlScripts.USER_SAVE;
 
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, user.getEmail());
             stmt.setString(2, user.getPasswordHash());
             stmt.setString(3, user.getName());
@@ -71,7 +79,8 @@ public class UserRepositoryImpl implements UserRepository {
     public Optional<User> findByEmail(String email) throws SQLException{
         String sql = SqlScripts.USER_FIND_BY_EMAIL;
 
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, email);
             ResultSet resultSet = stmt.executeQuery();
 
@@ -94,7 +103,8 @@ public class UserRepositoryImpl implements UserRepository {
     public Optional<User> findById(Long id) throws SQLException{
         String sql = SqlScripts.USER_FIND_BY_ID;
 
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setLong(1, id);
             ResultSet resultSet = stmt.executeQuery();
 
@@ -119,7 +129,8 @@ public class UserRepositoryImpl implements UserRepository {
 
         String sql = SqlScripts.USER_GET_ALL;
 
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
             ResultSet resultSet = stmt.executeQuery();
 
             while (resultSet.next()) {
@@ -142,7 +153,8 @@ public class UserRepositoryImpl implements UserRepository {
     public void deleteById(Long id) throws SQLException{
         String sql = SqlScripts.USER_DELETE_BY_ID;
 
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setLong(1, id);
             stmt.executeUpdate();
         }
@@ -152,7 +164,8 @@ public class UserRepositoryImpl implements UserRepository {
     public void update(Long id, User user) throws SQLException{
         String sql = SqlScripts.USER_UPDATE;
 
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setLong(7, user.getId());
             stmt.setString(1, user.getEmail());
             stmt.setString(2, user.getPasswordHash());
