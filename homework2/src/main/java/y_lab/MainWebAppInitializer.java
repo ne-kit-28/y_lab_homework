@@ -9,6 +9,7 @@ import org.springframework.web.context.ContextLoaderListener;
 import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
 import org.springframework.web.servlet.DispatcherServlet;
 import y_lab.config.AopConfig;
+import y_lab.config.SwaggerConfig;
 import y_lab.config.WebConfig;
 import y_lab.controller.filter.JwtFilterRole;
 import y_lab.controller.filter.JwtFilterUserId;
@@ -17,7 +18,7 @@ public class MainWebAppInitializer implements WebApplicationInitializer {
     @Override
     public void onStartup(ServletContext container) throws ServletException {
         AnnotationConfigWebApplicationContext context = new AnnotationConfigWebApplicationContext();
-        context.register(WebConfig.class, AopConfig.class);
+        context.register(WebConfig.class, AopConfig.class, SwaggerConfig.class);
         container.addListener(new ContextLoaderListener(context));
 
 

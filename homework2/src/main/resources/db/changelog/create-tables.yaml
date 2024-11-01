@@ -7,7 +7,7 @@ databaseChangeLog:
         - createTable:
             tableName: users
             schemaName: domain
-            comments: "Таблица пользователей"
+            remarks: "Таблица пользователей"
             columns:
               - column:
                   name: id
@@ -16,50 +16,50 @@ databaseChangeLog:
                     primaryKey: true
                     nullable: false
                     autoIncrement: false
-                    comments: "Уникальный идентификатор пользователя"
+                    remarks: "Уникальный идентификатор пользователя"
               - column:
                   name: email
                   type: varchar(255)
                   constraints:
                     nullable: false
                     unique: true
-                  comments: "Электронная почта пользователя"
+                  remarks: "Электронная почта пользователя"
               - column:
                   name: password_hash
                   type: varchar(255)
                   constraints:
                     nullable: false
-                  comments: "Хэш пароля пользователя"
+                  remarks: "Хэш пароля пользователя"
               - column:
                   name: name
                   type: varchar(255)
                   constraints:
                     nullable: false
-                  comments: "Имя пользователя"
+                  remarks: "Имя пользователя"
               - column:
                   name: is_block
                   type: boolean
                   constraints:
                     nullable: false
                     defaultValue: false
-                  comments: "Флаг блокировки пользователя"
+                  remarks: "Флаг блокировки пользователя"
               - column:
                   name: role
                   type: varchar(50)
                   constraints:
                     nullable: false
-                  comments: "Роль пользователя"
+                  remarks: "Роль пользователя"
               - column:
                   name: reset_token
                   type: varchar(255)
                   constraints:
                     nullable: true
-                  comments: "Токен сброса пароля"
+                  remarks: "Токен сброса пароля"
 
         - createTable:
             tableName: habits
             schemaName: domain
-            comments: "Таблица привычек"
+            remarks: "Таблица привычек"
             columns:
               - column:
                   name: id
@@ -68,42 +68,42 @@ databaseChangeLog:
                     primaryKey: true
                     nullable: false
                     autoIncrement: false
-                  comments: "Уникальный идентификатор привычки"
+                  remarks: "Уникальный идентификатор привычки"
               - column:
                   name: user_id
                   type: bigint
                   constraints:
                     nullable: false
-                  comments: "Идентификатор пользователя, которому принадлежит привычка"
+                  remarks: "Идентификатор пользователя, которому принадлежит привычка"
               - column:
                   name: name
                   type: varchar(255)
                   constraints:
                     nullable: false
-                  comments: "Название привычки"
+                  remarks: "Название привычки"
               - column:
                   name: description
                   type: text
                   constraints:
                     nullable: true
-                  comments: "Описание привычки"
+                  remarks: "Описание привычки"
               - column:
                   name: frequency
                   type: varchar(50)
                   constraints:
                     nullable: false
-                  comments: "Частота выполнения привычки"
+                  remarks: "Частота выполнения привычки"
               - column:
                   name: created_at
                   type: varchar(50)
                   constraints:
                     nullable: false
-                  comments: "Дата создания привычки"
+                  remarks: "Дата создания привычки"
 
         - createTable:
             tableName: progresses
             schemaName: domain
-            comments: "Таблица прогресса пользователей по привычкам"
+            remarks: "Таблица прогресса пользователей по привычкам"
             columns:
               - column:
                   name: id
@@ -112,30 +112,30 @@ databaseChangeLog:
                     primaryKey: true
                     nullable: false
                     autoIncrement: false
-                  comments: "Уникальный идентификатор прогресса"
+                  remarks: "Уникальный идентификатор прогресса"
               - column:
                   name: user_id
                   type: bigint
                   constraints:
                     nullable: false
-                  comments: "Идентификатор пользователя, которому принадлежит прогресс"
+                  remarks: "Идентификатор пользователя, которому принадлежит прогресс"
               - column:
                   name: habit_id
                   type: bigint
                   constraints:
                     nullable: false
-                  comments: "Идентификатор привычки"
+                  remarks: "Идентификатор привычки"
               - column:
                   name: date
                   type: varchar(50)
                   constraints:
                     nullable: false
-                  comments: "Дата записи прогресса"
+                  remarks: "Дата записи прогресса"
 
         - createTable:
             tableName: admins
             schemaName: service
-            comments: "Таблица администраторов"
+            remarks: "Таблица администраторов"
             columns:
               - column:
                   name: id
@@ -144,11 +144,41 @@ databaseChangeLog:
                     primaryKey: true
                     nullable: false
                     autoIncrement: true
-                  comments: "Уникальный идентификатор администратора"
+                  remarks: "Уникальный идентификатор администратора"
               - column:
                   name: email
                   type: varchar(255)
                   constraints:
                     nullable: false
                     unique: true
-                  comments: "Электронная почта администратора"
+                  remarks: "Электронная почта администратора"
+
+        - createTable:
+            tableName: audit
+            schemaName: service
+            remarks: "Таблица аудита"
+            columns:
+              - column:
+                  name: id
+                  type: serial
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+                    autoIncrement: true
+                  remarks: "id audit"
+              - column:
+                  name: user_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                  remarks: "User id"
+              - column:
+                  name: date
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+                  remarks: "Дата действия"
+              - column:
+                  name: message
+                  type: varchar(255)
+                  remarks: "message from method"

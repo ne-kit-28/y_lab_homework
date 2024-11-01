@@ -295,7 +295,7 @@
     <maven.compiler.source>17</maven.compiler.source>
     <jjwt.jackson.version>0.11.5</jjwt.jackson.version>
     <jackson.databind.version>2.17.2</jackson.databind.version>
-    <aspectjweaver.version>1.9.7</aspectjweaver.version>
+    <aspectjweaver.version>1.9.22</aspectjweaver.version>
     <jakarta.el.impl.version>3.0.4</jakarta.el.impl.version>
     <jakarta.validation.version>3.0.2</jakarta.validation.version>
     <testcontainers.version>1.19.0</testcontainers.version>
@@ -305,12 +305,14 @@
     <jjwt.impl.version>0.11.5</jjwt.impl.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <assertj.version>3.24.2</assertj.version>
+    <swagger.ui.version>5.17.14</swagger.ui.version>
     <jjwt.api.version>0.11.5</jjwt.api.version>
-    <aspectjrt.version>1.9.9.1</aspectjrt.version>
+    <aspectjrt.version>1.9.22</aspectjrt.version>
     <java.version>17</java.version>
     <liquibase.version>4.17.0</liquibase.version>
     <mockito.version>5.12.0</mockito.version>
     <junit.jupiter.version>5.8.1</junit.jupiter.version>
     <maven.compiler.target>17</maven.compiler.target>
+    <swagger.core.version>2.2.22</swagger.core.version>
   </properties>
 </project>

@@ -9,8 +9,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import y_lab.domain.User;
-import y_lab.mapper.UserMapper;
+import y_lab.out.audit.AuditRecord;
+import y_lab.out.audit.AuditService;
 import y_lab.service.UserService;
+import y_lab.out.audit.AuditServiceImpl;
 import y_lab.service.serviceImpl.UserServiceImpl;
 
 import java.util.ArrayList;
@@ -20,10 +22,12 @@ import java.util.ArrayList;
 public class UserAdminController {
 
     private final UserService userService;
+    private final AuditService auditService;
 
     @Autowired
-    public UserAdminController (UserServiceImpl userService){
+    public UserAdminController (UserServiceImpl userService, AuditServiceImpl auditService){
         this.userService = userService;
+        this.auditService = auditService;
     }
 
     @GetMapping(value = "/all")
@@ -36,6 +40,15 @@ public class UserAdminController {
                                           @PathVariable("status") @Pattern(regexp = "true|false") boolean status) {
         if (userService.blockUser(userId, status))
             return ResponseEntity.ok().build();
+        else
+            return ResponseEntity.notFound().build();
+    }
+
+    @GetMapping(value = "/{userId}/audit")
+    public ResponseEntity<ArrayList<AuditRecord>> getAudit(@PathVariable("userId") @Positive long userId) {
+        ArrayList<AuditRecord> auditRecord = auditService.getAudit(userId);
+        if (!auditRecord.isEmpty())
+            return ResponseEntity.ok(auditRecord);
         else
             return ResponseEntity.notFound().build();
     }

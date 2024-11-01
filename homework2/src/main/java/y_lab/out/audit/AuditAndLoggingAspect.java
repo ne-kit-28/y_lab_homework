@@ -1,51 +1,84 @@
 package y_lab.out.audit;
 
+
+import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
-import org.aspectj.lang.annotation.Around;
-import org.aspectj.lang.annotation.Aspect;
-import org.aspectj.lang.annotation.Before;
+import org.aspectj.lang.annotation.*;
 import org.aspectj.lang.reflect.MethodSignature;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.context.annotation.Scope;
+import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.stereotype.Component;
+
+import java.time.LocalDateTime;
 
 /**
  * Aspect for auditing and logging method execution details.
  */
 @Aspect
 @Component
+@Scope(proxyMode = ScopedProxyMode.TARGET_CLASS)
 public class AuditAndLoggingAspect {
 
-    private static final Logger logger = LoggerFactory.getLogger(AuditAndLoggingAspect.class);
+    private final AuditService auditService;
 
-    /**
-     * Logs the action performed by the user before the annotated method is executed.
-     *
-     * @param auditAction the AuditAction annotation containing the action description
-     */
-    @Before("@annotation(auditAction)")
-    public void auditAction(AuditAction auditAction) {
-        String action = auditAction.action();
-        logger.info("Пользователь совершил действие: {}", action);
+    @Autowired
+    public AuditAndLoggingAspect(@Lazy AuditServiceImpl auditService) {
+        this.auditService = auditService;
     }
 
-    /**
-     * Logs the execution time of the annotated method.
-     *
-     * @param joinPoint the join point representing the method execution
-     * @return the result of the method execution
-     * @throws Throwable if an error occurs during method execution
-     */
-    @Around("@annotation(LogExecutionTime)")
+    @Before("execution(public * y_lab.service.serviceImpl.LoginServiceImpl.*(..))")
+    public void logAudit(JoinPoint joinPoint) {
+        Long userId = UserContext.getUserId();
+        if (userId == null)
+            userId = -1L;
+        String methodName = joinPoint.getSignature().getName();
+
+        AuditRecord record = new AuditRecord(userId, LocalDateTime.now(), methodName);
+        auditService.createAudit(record);
+    }
+
+    @Around("execution(public * y_lab.service.serviceImpl.LoginServiceImpl.*(..))")
     public Object logExecutionTime(ProceedingJoinPoint joinPoint) throws Throwable {
         long start = System.currentTimeMillis();
-        Object proceed = joinPoint.proceed(); // Proceed with the method execution
+        Object proceed = joinPoint.proceed();
         long executionTime = System.currentTimeMillis() - start;
+        Long userId = UserContext.getUserId();
+        if (userId == null)
+            userId = -1L;
 
         MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();
         String methodName = methodSignature.getMethod().getName();
-        logger.info("Метод {} выполнен за {} мс", methodName, executionTime);
+        String message = "Метод " + methodName + " выполнен за " + executionTime;
+
+        AuditRecord record = new AuditRecord(userId, LocalDateTime.now(), message);
+        auditService.createAudit(record);
 
         return proceed;
     }
+
+//    @AfterReturning(pointcut = "serviceMethods()", returning = "result")
+//    public void logAfterMethod(JoinPoint joinPoint, Object result) {
+//
+//        Long userId = UserContext.getUserId();
+//        if (userId == null)
+//            userId = -1L;
+//        String message = "Метод завершен: " + joinPoint.getSignature().getName()
+//                + ", возвращено значение: " + result;
+//
+//        AuditRecord record = new AuditRecord(userId, LocalDateTime.now(), message);
+//        auditService.createAudit(record);
+//    }
+//
+//    @AfterThrowing(pointcut = "serviceMethods()", throwing = "exception")
+//    public void logException(Throwable exception) {
+//        Long userId = UserContext.getUserId();
+//        if (userId == null)
+//            userId = -1L;
+//        String message = "Исключение " + exception.getMessage();
+//
+//        AuditRecord record = new AuditRecord(userId, LocalDateTime.now(), message);
+//        auditService.createAudit(record);
+//    }
 }

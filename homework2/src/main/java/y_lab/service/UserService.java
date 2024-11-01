@@ -1,8 +1,6 @@
 package y_lab.service;
 
 import y_lab.domain.User;
-import y_lab.out.audit.AuditAction;
-import y_lab.out.audit.LogExecutionTime;
 
 import java.util.ArrayList;
 import java.util.Optional;
@@ -18,8 +16,6 @@ public interface UserService {
      * @param id          the ID of the user to be edited
      * @param user        the user
      */
-    @LogExecutionTime
-    @AuditAction(action = "Редактирование пользователя")
     boolean editUser(Long id, User user);
 
     /**
@@ -28,8 +24,6 @@ public interface UserService {
      * @param id   the ID of the user to be blocked or unblocked
      * @param block true to block the user, false to unblock
      */
-    @LogExecutionTime
-    @AuditAction(action = "(де-)блокировка пользователя")
     boolean blockUser(Long id, boolean block);
 
     /**
@@ -37,8 +31,6 @@ public interface UserService {
      *
      * @param id the ID of the user to be deleted
      */
-    @LogExecutionTime
-    @AuditAction(action = "Удаление пользователя")
     boolean deleteUser(Long id);
 
     /**
@@ -47,8 +39,6 @@ public interface UserService {
      * @param email the email of the user to be retrieved
      * @return an Optional containing the user if found, or an empty Optional if not found
      */
-    @LogExecutionTime
-    @AuditAction(action = "Получение пользователя по email")
     Optional<User> getUser(String email);
 
     /**
@@ -56,7 +46,5 @@ public interface UserService {
      *
      * @return a list of all users
      */
-    @LogExecutionTime
-    @AuditAction(action = "Получение всех пользователей")
     ArrayList<User> getUsers();
 }
