@@ -1,4 +1,4 @@
-package y_lab.controller;
+package y_lab.controller.api;
 
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,10 +13,11 @@ import y_lab.mapper.LoginMapper;
 import y_lab.mapper.LoginMapperImpl;
 import y_lab.service.LoginService;
 import y_lab.service.serviceImpl.LoginServiceImpl;
+import y_lab.util.JwtUtil;
 
 
 @RestController
-@RequestMapping(value = "/api/login")
+@RequestMapping(value = "/login")
 public class LoginController {
 
     private final LoginMapper loginMapper;
@@ -32,7 +33,9 @@ public class LoginController {
     public ResponseEntity<LoginResponseDto> signIn(@RequestBody @Valid LoginInDto loginInDto) {
          LoginResponseDto loginResponseDto = loginService.login(loginMapper.loginInDtoToUser(loginInDto));
          if (loginResponseDto.id() != -1L)
-             return ResponseEntity.ok(loginResponseDto);
+             return ResponseEntity.status(HttpStatus.OK)
+                     .header("Authorization", "Bearer " + JwtUtil.generateToken(loginResponseDto.id(), loginResponseDto.role()))
+                     .body(loginResponseDto);
          else
              return ResponseEntity.status(HttpStatus.CONFLICT).body(loginResponseDto);
     }

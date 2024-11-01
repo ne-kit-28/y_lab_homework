@@ -48,7 +48,6 @@ public class JwtFilterRole implements Filter {
 
         try {
             String roleFromToken = JwtUtil.getRole(token);
-            System.out.println(roleFromToken);
 
             String roleParam = Role.ADMINISTRATOR.getValue();
 

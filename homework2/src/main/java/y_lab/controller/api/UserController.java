@@ -1,4 +1,4 @@
-package y_lab.controller;
+package y_lab.controller.api;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
@@ -14,11 +14,10 @@ import y_lab.mapper.UserMapperImpl;
 import y_lab.service.UserService;
 import y_lab.service.serviceImpl.UserServiceImpl;
 
-import java.util.ArrayList;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/user")
+@RequestMapping("/user")
 public class UserController {
 
     private final UserService userService;
@@ -30,19 +29,15 @@ public class UserController {
         this.userMapper = new UserMapperImpl();
     }
 
-    @GetMapping(value = "/all")
-    public ResponseEntity<ArrayList<User>> getUsers() {
-        return ResponseEntity.ok(userService.getUsers());
-    }
-
-    @GetMapping(value = "/{email}")
+    @GetMapping(value = "/{userId}/{email}")
     public ResponseEntity<UserResponseDto> getUser(@PathVariable("email") @Email String email) {
         Optional<User> user = userService.getUser(email);
         return user.map(value -> ResponseEntity.ok(userMapper.userToUserResponseDto(value))).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PutMapping(value = "/{userId}")
-    public ResponseEntity<Void> updateUser(@PathVariable("userId") @Positive long userId, @RequestBody @Valid UserRequestDto userRequestDto) {
+    public ResponseEntity<Void> updateUser(@PathVariable("userId") @Positive long userId,
+                                           @RequestBody @Valid UserRequestDto userRequestDto) {
         if (userService.editUser(userId, userMapper.userRequestDtoToUser(userRequestDto)))
             return ResponseEntity.ok().build();
         else

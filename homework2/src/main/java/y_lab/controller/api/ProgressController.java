@@ -1,4 +1,4 @@
-package y_lab.controller;
+package y_lab.controller.api;
 
 import jakarta.validation.constraints.Positive;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +11,7 @@ import y_lab.service.serviceImpl.HabitServiceImpl;
 import y_lab.service.serviceImpl.ProgressServiceImpl;
 
 @RestController
-@RequestMapping(value = "/api/progress/")
+@RequestMapping(value = "/progress")
 public class ProgressController {
 
     private final ProgressService progressService;
@@ -23,7 +23,7 @@ public class ProgressController {
         this.habitService = habitService;
     }
 
-    @PostMapping(value = "create/{habitId}")
+    @PostMapping(value = "/{userId}/create/{habitId}")
     public ResponseEntity<Void> createProgress(@PathVariable("habitId") @Positive long habitId) {
         if (progressService.createProgress(habitId))
             return ResponseEntity.ok().build();
@@ -31,20 +31,22 @@ public class ProgressController {
             return ResponseEntity.notFound().build();
     }
 
-    @GetMapping(value = "/streak/{habitId}")
+    @GetMapping(value = "/{userId}/streak/{habitId}")
     public ResponseEntity<ProgressResponseDto> getStreak(@PathVariable("habitId") @Positive long habitId) {
         String message = progressService.calculateStreak(habitId);
         return ResponseEntity.ok(new ProgressResponseDto(habitId, "streak", message));
     }
 
-    @GetMapping(value = "/statistic/{habitId}/{period}")
-    public ResponseEntity<ProgressResponseDto> getStatistic(@PathVariable("habitId") @Positive long habitId, @PathVariable("period") String period) {
+    @GetMapping(value = "/{userId}/statistic/{habitId}/{period}")
+    public ResponseEntity<ProgressResponseDto> getStatistic(@PathVariable("habitId") @Positive long habitId,
+                                                            @PathVariable("period") String period) {
         String message = progressService.generateProgressStatistics(habitId, period);
         return ResponseEntity.ok(new ProgressResponseDto(habitId, "statistic", message));
     }
 
-    @GetMapping(value = "/report/{habitId}/{period}")
-    public ResponseEntity<ProgressResponseDto> getReport(@PathVariable("habitId") @Positive long habitId, @PathVariable("period") String period) {
+    @GetMapping(value = "/{userId}/report/{habitId}/{period}")
+    public ResponseEntity<ProgressResponseDto> getReport(@PathVariable("habitId") @Positive long habitId,
+                                                         @PathVariable("period") String period) {
         String message = progressService.generateReport(habitId, period);
         return ResponseEntity.ok(new ProgressResponseDto(habitId, "report", message));
     }

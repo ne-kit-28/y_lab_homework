@@ -10,8 +10,10 @@ import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Arrays;
 
 import y_lab.domain.enums.Role;
+import y_lab.out.audit.UserContext;
 import y_lab.util.JwtUtil;
 
 /**
@@ -29,6 +31,7 @@ import y_lab.util.JwtUtil;
  * <p>On detecting an invalid token or a mismatch between the user ID in the token and the request,
  * the filter will return an HTTP error response.</p>
  */
+
 
 public class JwtFilterUserId implements Filter {
 
@@ -49,18 +52,28 @@ public class JwtFilterUserId implements Filter {
         token = token.substring(7); // Убираем Bearer
 
         try {
-            String roleFromToken = JwtUtil.getRole(token);
-            String roleParam = Role.ADMINISTRATOR.getValue();
 
             Long userIdFromToken = JwtUtil.getUserId(token);
-            String userIdParam = req.getParameter("userId");
 
-            if (userIdParam != null && Long.parseLong(userIdParam) != userIdFromToken && !roleParam.equals(roleFromToken)) {
+            String url = req.getRequestURI();
+            String[] pathSegments = url.split("/");
+            Long userIdFromUrl = null;
+
+            if (pathSegments.length >= 4) {
+                userIdFromUrl = Long.parseLong(pathSegments[4]);
+            }
+
+            if (userIdFromUrl != null && !userIdFromUrl.equals(userIdFromToken)) {
                 resp.sendError(HttpServletResponse.SC_FORBIDDEN, "User ID mismatch");
                 return;
             }
 
-            chain.doFilter(request, response);
+            UserContext.setUserId(userIdFromToken);
+            try {
+                chain.doFilter(request, response);
+            } finally {
+                UserContext.clear();
+            }
 
         } catch (Exception e) {
             resp.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid token");

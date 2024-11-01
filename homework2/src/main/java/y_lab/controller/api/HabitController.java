@@ -1,4 +1,4 @@
-package y_lab.controller;
+package y_lab.controller.api;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.Optional;
 
 @RestController
-@RequestMapping(value = "/api/habit")
+@RequestMapping(value = "/habit")
 public class HabitController {
 
     private final HabitService habitService;
@@ -29,33 +29,37 @@ public class HabitController {
         this.habitMapper = new HabitMapperImpl();
     }
 
-    @GetMapping(value = "/{userId}/{filter}")
-    public ResponseEntity<ArrayList<HabitResponseDto>> getHabits(@PathVariable("userId") @Positive long userId, @PathVariable("filter") String filter) {
+    @GetMapping(value = "/{userId}/all/{filter}")
+    public ResponseEntity<ArrayList<HabitResponseDto>> getHabits(@PathVariable("userId") @Positive long userId,
+                                                                 @PathVariable("filter") String filter) {
         return ResponseEntity.ok(habitMapper.habitsToHabitResponseDtos(habitService.getHabits(userId, filter)));
     }
 
     @GetMapping(value = "/{userId}/{name}")
-    public ResponseEntity<HabitResponseDto> getHabit(@PathVariable("userId") @Positive long userId, @PathVariable("name") String name) {
+    public ResponseEntity<HabitResponseDto> getHabit(@PathVariable("userId") @Positive long userId,
+                                                     @PathVariable("name") String name) {
         Optional<Habit> habit = habitService.getHabit(name, userId);
         return habit.map(value -> ResponseEntity.ok(habitMapper.habitToHabitResponseDto(value))).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @PostMapping(value = "/create/{userId}")
-    public ResponseEntity<HabitResponseDto> createHabit(@PathVariable("userId") @Positive long userId, @RequestBody @Valid HabitRequestDto habitRequestDto) {
+    @PostMapping(value = "/{userId}/create")
+    public ResponseEntity<HabitResponseDto> createHabit(@PathVariable("userId") @Positive long userId,
+                                                        @RequestBody @Valid HabitRequestDto habitRequestDto) {
         habitService.createHabit(userId, habitMapper.habitRequestDtoToHabit(habitRequestDto));
         Optional<Habit> habit = habitService.getHabit(habitRequestDto.name(), userId);
         return habit.map(value -> ResponseEntity.ok(habitMapper.habitToHabitResponseDto(habit.get()))).orElseGet(() -> ResponseEntity.badRequest().build());
     }
 
-    @PutMapping(value = "/{habitId}")
-    public ResponseEntity<Void> updateHabit(@PathVariable("habitId") @Positive long habitId, @RequestBody @Valid HabitRequestDto habitRequestDto) {
+    @PutMapping(value = "/{userId}/{habitId}")
+    public ResponseEntity<Void> updateHabit(@PathVariable("habitId") @Positive long habitId,
+                                            @RequestBody @Valid HabitRequestDto habitRequestDto) {
         if (habitService.updateHabit(habitId, habitMapper.habitRequestDtoToHabit(habitRequestDto)))
             return ResponseEntity.ok().build();
         else
             return ResponseEntity.badRequest().build();
     }
 
-    @DeleteMapping(value = "/{habitId}")
+    @DeleteMapping(value = "/{userId}/{habitId}")
     public ResponseEntity<Void> deleteHabit(@PathVariable("habitId") @Positive long habitId) {
         if (habitService.deleteHabit(habitId))
             return ResponseEntity.ok().build();
