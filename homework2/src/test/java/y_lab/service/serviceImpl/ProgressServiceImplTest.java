@@ -77,14 +77,12 @@ public class ProgressServiceImplTest {
     @Test
     @DisplayName("Progress must be created")
     public void CreateProgress() throws SQLException {
-        Long userId = 1L;
         Long habitId = 1L;
 
-        progressService.createProgress(userId, habitId);
+        progressService.createProgress(habitId);
 
         Optional<Progress> progress = progressRepository.findByHabitId(habitId).stream().findFirst();
         assertTrue(progress.isPresent());
-        assertEquals(userId, progress.get().getUserId());
         assertEquals(habitId, progress.get().getHabitId());
         assertEquals(LocalDate.now(), progress.get().getDate());
     }
@@ -92,11 +90,10 @@ public class ProgressServiceImplTest {
     @Test
     @DisplayName("статистика должна успешно создаться")
     public void GenerateProgressStatistics() {
-        Long userId = 1L;
         Long habitId = 1L;
 
-        progressService.createProgress(userId, habitId);
-        progressService.createProgress(userId, habitId);
+        progressService.createProgress(habitId);
+        progressService.createProgress(habitId);
 
         PrintStream originalOut = System.out;
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -117,7 +114,7 @@ public class ProgressServiceImplTest {
         Long userId = 1L;
         Long habitId = 1L;
 
-        progressService.createProgress(userId, habitId);
+        progressService.createProgress(habitId);
         progressRepository.save(new Progress(null, userId, habitId, LocalDate.now().minusDays(1)));
 
         PrintStream originalOut = System.out;
@@ -134,11 +131,11 @@ public class ProgressServiceImplTest {
     }
 
     @Test
+    @DisplayName("Создание отчета")
     public void GenerateReport() {
-        Long userId = 1L;
         Long habitId = 1L;
 
-        progressService.createProgress(userId, habitId);
+        progressService.createProgress(habitId);
 
         PrintStream originalOut = System.out;
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -149,6 +146,7 @@ public class ProgressServiceImplTest {
         String output = outputStream.toString();
         System.setOut(originalOut);
 
-        assertTrue(output.contains("Report generated successfully."));
+        assertFalse(output.contains("Sql error"));
+        assertFalse(output.contains("no habit"));
     }
 }

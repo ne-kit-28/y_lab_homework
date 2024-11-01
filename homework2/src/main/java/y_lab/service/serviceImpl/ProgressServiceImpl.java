@@ -1,8 +1,12 @@
 package y_lab.service.serviceImpl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import y_lab.domain.Habit;
 import y_lab.domain.Progress;
 import y_lab.domain.enums.Frequency;
+import y_lab.repository.HabitRepository;
+import y_lab.repository.ProgressRepository;
 import y_lab.repository.repositoryImpl.HabitRepositoryImpl;
 import y_lab.repository.repositoryImpl.ProgressRepositoryImpl;
 import y_lab.service.ProgressService;
@@ -15,11 +19,13 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 public class ProgressServiceImpl implements ProgressService {
-    private final HabitRepositoryImpl habitRepository;
-    private final ProgressRepositoryImpl progressRepository;
+    private final HabitRepository habitRepository;
+    private final ProgressRepository progressRepository;
     private final Connection connection;
+    private static final Logger logger = LoggerFactory.getLogger(ProgressServiceImpl.class);
 
     public ProgressServiceImpl(
             HabitRepositoryImpl habitRepository
@@ -41,19 +47,25 @@ public class ProgressServiceImpl implements ProgressService {
     }
 
     @Override
-    public void createProgress(Long userId, Long habitId) {
+    public boolean createProgress(Long habitId) {
         try {
             connection.setAutoCommit(false);
 
+            Optional<Habit> habit = habitRepository.findById(habitId);
+            if (habit.isEmpty())
+                return false;
+
             Progress progress = Progress.builder()
-                    .userId(userId)
+                    .userId(habit.get().getUserId())
                     .habitId(habitId)
                     .date(LocalDate.now())
                     .build();
             progressRepository.save(progress);
-            System.out.println("The habit is complete");
 
             connection.commit();
+
+            logger.info("The habit is complete");
+            return true;
         } catch (SQLException e) {
             try {
                 connection.rollback();
@@ -68,10 +80,14 @@ public class ProgressServiceImpl implements ProgressService {
                 ex.printStackTrace();
             }
         }
+        return false;
     }
 
     @Override
-    public void generateProgressStatistics(Long habitId, String period) {
+    public String generateProgressStatistics(Long habitId, String period) {
+
+        String returnStr = "";
+
         try {
             Habit habit = habitRepository.findById(habitId).orElseThrow(NoSuchElementException::new);
             Frequency frequency = habit.getFrequency();
@@ -83,11 +99,11 @@ public class ProgressServiceImpl implements ProgressService {
 
             ArrayList<Progress> progressList = progressRepository.findByHabitId(habitId);
             if (progressList.isEmpty()) {
-                System.out.println("Habit: " + habit.getName());
-                System.out.println("Period: " + period);
-                System.out.println("Completed: 0 out of " + totalDays + " times.");
-                System.out.println("Completion rate: 0%");
-                return;
+                returnStr += "Habit: " + habit.getName();
+                returnStr += "\nPeriod: " + period;
+                returnStr += "\nCompleted: 0 out of " + totalDays + " times.";
+                returnStr += "\nCompletion rate: 0%";
+                return returnStr;
             }
 
             ArrayList<Progress> filteredProgresses = new ArrayList<>(progressList
@@ -98,25 +114,34 @@ public class ProgressServiceImpl implements ProgressService {
             // Generate statistics
             long completedDays = filteredProgresses.size();
 
-            System.out.println("Habit: " + habit.getName());
-            System.out.println("Period: " + period);
-            System.out.println("Completed: " + completedDays + " out of " + totalDays + " times.");
-            System.out.println("Completion rate: " + (completedDays * 100 / (totalDays == 0 ? 1 : totalDays)) + "%");
+            returnStr += "Habit: " + habit.getName();
+            returnStr += "\nPeriod: " + period;
+            returnStr += "\nCompleted: " + completedDays + " out of " + totalDays + " times.";
+            returnStr += "\nCompletion rate: " + (completedDays * 100 / (totalDays == 0 ? 1 : totalDays)) + "%";
+
+            System.out.println(returnStr);
         } catch (SQLException e) {
-            System.out.println("Sql error in generateProgressStatistic");
+            returnStr = "Sql error in generateProgressStatistic";
+        } catch (NoSuchElementException e) {
+            returnStr = "no habit with such id";
         }
+        return returnStr;
     }
 
     @Override
-    public void calculateStreak(Long habitId) {
+    public String calculateStreak(Long habitId) {
+
+        String returnStr = "";
+
         try {
+
             Habit habit = habitRepository.findById(habitId).orElseThrow(NoSuchElementException::new);
 
             ArrayList<Progress> progressList = progressRepository.findByHabitId(habitId);
             if (progressList.isEmpty()) {
-                System.out.println("Current streak: 0 days.");
-                System.out.println("Max streak: 0 days.");
-                return;
+                returnStr += "Current streak: 0 days.";
+                returnStr += "\nMax streak: 0 days.";
+                return returnStr;
             }
 
             progressList = new ArrayList<>(progressList.stream()
@@ -139,21 +164,27 @@ public class ProgressServiceImpl implements ProgressService {
                 maxStreak = streak;
             }
 
-            System.out.println("Current streak: " + streak + " days.");
-            System.out.println("Max streak: " + maxStreak + " days.");
+            returnStr += "Current streak: " + streak + " days.";
+            returnStr += "\nMax streak: " + maxStreak + " days.";
+
+            System.out.println(returnStr);
         } catch (SQLException e) {
-            System.out.println("Sql error in calculateStreak");
+            returnStr = "Sql error in calculateStreak";
+        } catch (NoSuchElementException e) {
+            returnStr = "no habit with such id";
         }
+        return  returnStr;
     }
 
     @Override
-    public void generateReport(Long habitId, String period) { // String {"day", "week", "month"}
+    public String generateReport(Long habitId, String period) { // String {"day", "week", "month"}
         // Generate progress statistics
-        this.generateProgressStatistics(habitId, period);
+        String statistic = this.generateProgressStatistics(habitId, period);
 
         // Calculate streak
-        this.calculateStreak(habitId);
+        String streak = this.calculateStreak(habitId);
 
-        System.out.println("Report generated successfully.");
+        System.out.println(statistic + '\n' + streak);
+        return (statistic + '\n' + streak);
     }
 }

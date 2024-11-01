@@ -1,8 +1,12 @@
 package y_lab.service.serviceImpl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import y_lab.domain.User;
 import y_lab.domain.enums.Frequency;
 import y_lab.domain.Habit;
+import y_lab.repository.HabitRepository;
+import y_lab.repository.UserRepository;
 import y_lab.repository.repositoryImpl.HabitRepositoryImpl;
 import y_lab.repository.repositoryImpl.UserRepositoryImpl;
 import y_lab.service.ExecutorService;
@@ -16,12 +20,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class ExecutorServiceImpl implements ExecutorService {
+public class ExecutorServiceImpl implements ExecutorService, AutoCloseable {
 
-    private final HabitRepositoryImpl habitRepository;
-    private final UserRepositoryImpl userRepository;
+    private final HabitRepository habitRepository;
+    private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    private static final Logger logger = LoggerFactory.getLogger(ExecutorServiceImpl.class);
 
     public ExecutorServiceImpl(HabitRepositoryImpl habitRepository, UserRepositoryImpl userRepository, NotificationService notificationService) {
         this.habitRepository = habitRepository;
@@ -42,7 +47,7 @@ public class ExecutorServiceImpl implements ExecutorService {
                     }
                 }
             } catch (SQLException e) {
-                System.out.println("Sql error in startScheduler");
+                logger.info("Sql error in startScheduler");
             }
         }, 0, 1, TimeUnit.DAYS); // Check reminders every day
     }
@@ -58,5 +63,10 @@ public class ExecutorServiceImpl implements ExecutorService {
             scheduler.shutdownNow(); // Immediate shutdown on interruption
             Thread.currentThread().interrupt(); // Restore interruption flag
         }
+    }
+
+    @Override
+    public void close() throws Exception {
+        stopScheduler();
     }
 }

@@ -66,17 +66,20 @@ class UserServiceImplTest {
     @DisplayName("изменяет пользователя")
     public void editUser() {
         Long userId = 1L;
-        String newName = "Updated User";
-        String newEmail = "updated@example.com";
-        String newPassword = "newPassword";
 
-        userService.editUser(userId, newName, newEmail, newPassword);
+        User user = User.builder()
+                .name("Updated User")
+                .email("updated@example.com")
+                .passwordHash(HashFunction.hashPassword("newPassword"))
+                .build();
+
+        userService.editUser(userId, user);
 
         Optional<User> updatedUser = userService.getUser("updated@example.com");
         assertTrue(updatedUser.isPresent());
-        assertEquals(newName, updatedUser.get().getName());
-        assertEquals(newEmail, updatedUser.get().getEmail());
-        assertEquals(HashFunction.hashPassword(newPassword), updatedUser.get().getPasswordHash());
+        assertEquals("Updated User", updatedUser.get().getName());
+        assertEquals("updated@example.com", updatedUser.get().getEmail());
+        assertEquals(HashFunction.hashPassword("newPassword"), updatedUser.get().getPasswordHash());
     }
 
     @Test
@@ -103,8 +106,16 @@ class UserServiceImplTest {
     @DisplayName("Получает список всех пользователей")
     void getUsers() {
         LoginServiceImpl loginService = new LoginServiceImpl(new UserRepositoryImpl(connection), connection);
-        loginService.register("User One", "user1@example.com", "hashedPassword1");
-        loginService.register("User Two", "user2@example.com", "hashedPassword2");
+        loginService.register(User.builder()
+                .name("User One")
+                .email("user1@example.com")
+                .passwordHash(HashFunction.hashPassword("hashedPassword1"))
+                .build());
+        loginService.register(User.builder()
+                .name("User Two")
+                .email("user2@example.com")
+                .passwordHash(HashFunction.hashPassword("hashedPassword2"))
+                .build());
 
         ArrayList<User> users = userService.getUsers();
 

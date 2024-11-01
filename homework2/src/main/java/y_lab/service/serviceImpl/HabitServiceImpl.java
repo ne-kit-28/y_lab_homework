@@ -1,8 +1,12 @@
 package y_lab.service.serviceImpl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import y_lab.domain.Habit;
 import y_lab.domain.User;
 import y_lab.domain.enums.Frequency;
+import y_lab.repository.HabitRepository;
+import y_lab.repository.ProgressRepository;
 import y_lab.repository.repositoryImpl.HabitRepositoryImpl;
 import y_lab.repository.repositoryImpl.ProgressRepositoryImpl;
 import y_lab.repository.repositoryImpl.UserRepositoryImpl;
@@ -17,9 +21,10 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 
 public class HabitServiceImpl implements HabitService {
-    private final HabitRepositoryImpl habitRepository;
-    private final ProgressRepositoryImpl progressRepository;
+    private final HabitRepository habitRepository;
+    private final ProgressRepository progressRepository;
     private final Connection connection;
+    private static final Logger logger = LoggerFactory.getLogger(HabitServiceImpl.class);
 
     public HabitServiceImpl(HabitRepositoryImpl habitRepository
             , ProgressRepositoryImpl progressRepository
@@ -30,19 +35,22 @@ public class HabitServiceImpl implements HabitService {
     }
 
     @Override
-    public void createHabit(Long userId, String name, String description, Frequency frequency) {
+    public Long createHabit(Long userId, Habit habit) {
+
+        Long habitId = -1L;
 
         try {
             connection.setAutoCommit(false);
 
-            if (habitRepository.findByName(name, userId).isPresent()) {
-                System.out.println("Habit with such name exists");
-                System.out.println("Habit is not created");
+            if (habitRepository.findByName(habit.getName(), userId).isPresent()) {
+                logger.info("Habit with such name exists");
+                logger.info("Habit is not created");
             } else {
-                Habit habit = new Habit(name, description, frequency, LocalDate.now());
+                habit.setCreatedAt(LocalDate.now());
                 habit.setUserId(userId);
                 habitRepository.save(habit);
-                System.out.println("Habit " + name + " is created!");
+                habitId = habitRepository.findByName(habit.getName(), userId).get().getId();
+                logger.info("Habit " + habit.getName() + " is created!");
             }
 
             connection.commit();
@@ -60,18 +68,23 @@ public class HabitServiceImpl implements HabitService {
                 ex.printStackTrace();
             }
         }
+        return habitId;
     }
 
     @Override
-    public void deleteHabit(Long id) {
+    public boolean deleteHabit(Long id) {
+
+        boolean del = false;
+
         try {
             connection.setAutoCommit(false);
 
             habitRepository.delete(id);
             progressRepository.deleteAllByHabitId(id);
-            System.out.println("Habit with id: " + id + " was deleted!");
+            logger.info("Habit with id: " + id + " was deleted!");
 
             connection.commit();
+            del = true;
         } catch (SQLException e) {
             try {
                 connection.rollback();
@@ -86,10 +99,11 @@ public class HabitServiceImpl implements HabitService {
                 ex.printStackTrace();
             }
         }
+        return del;
     }
 
     @Override
-    public ArrayList<Habit> getHabits(Long userId, Object filter) {
+    public ArrayList<Habit> getHabits(Long userId, String filter) {
 
         ArrayList<Habit> habits = new ArrayList<>();
 
@@ -98,25 +112,27 @@ public class HabitServiceImpl implements HabitService {
 
             habits = habitRepository.findHabitsByUserId(userId).orElseThrow(NoSuchElementException::new);
 
-            if (filter instanceof String) {
+            if (filter.equalsIgnoreCase("weekly")) {
+                habits = new ArrayList<>(habits.stream()
+                        .filter(habit -> habit.getFrequency().equals(Frequency.WEEKLY))
+                        .toList());
+            } else if (filter.equalsIgnoreCase("daily")) {
+                habits = new ArrayList<>(habits.stream()
+                        .filter(habit -> habit.getFrequency().equals(Frequency.DAILY))
+                        .toList());
+            } else
                 habits = new ArrayList<>(habits.stream()
                         .sorted(Comparator.comparing(Habit::getCreatedAt))
                         .toList());
-            } else if (filter instanceof Frequency instanceFilter) {
-                habits = new ArrayList<>(habits.stream()
-                        .filter(habit -> habit.getFrequency().equals(instanceFilter))
-                        .toList());
-            }
 
             if (habits.isEmpty()) {
-                System.out.println("No habits");
+                logger.info("No habits");
             } else {
                 for (Habit habit : habits) {
-                    System.out.println("Name: " + habit.getName());
-                    System.out.println("Description: " + habit.getDescription());
-                    System.out.println("Created at: " + habit.getCreatedAt());
-                    System.out.println("Frequency: " + habit.getFrequency().toString());
-                    System.out.println();
+                    logger.info("Name: " + habit.getName());
+                    logger.info("Description: " + habit.getDescription());
+                    logger.info("Created at: " + habit.getCreatedAt());
+                    logger.info("Frequency: " + habit.getFrequency().toString() + '\n');
                 }
             }
 
@@ -139,24 +155,22 @@ public class HabitServiceImpl implements HabitService {
     }
 
     @Override
-    public Long getHabit(String habitName, Long userId) {
-
-        Long habitId = -1L;
+    public Optional<Habit> getHabit(String habitName, Long userId) {
 
         try {
             connection.setAutoCommit(false);
 
             Optional<Habit> habit = habitRepository.findByName(habitName, userId);
             if (habit.isPresent()) {
-                System.out.println("Name: " + habit.get().getName());
-                System.out.println("Description: " + habit.get().getDescription());
-                System.out.println("Created at: " + habit.get().getCreatedAt());
-                System.out.println("Frequency: " + habit.get().getFrequency().toString());
-                habitId =  habit.get().getId();
+                logger.info("Name: " + habit.get().getName());
+                logger.info("Description: " + habit.get().getDescription());
+                logger.info("Created at: " + habit.get().getCreatedAt());
+                logger.info("Frequency: " + habit.get().getFrequency().toString() + '\n');
             } else
-                System.out.println("No such habit");
+                logger.info("No such habit");
 
             connection.commit();
+            return habit;
         } catch (SQLException e) {
             try {
                 connection.rollback();
@@ -171,11 +185,46 @@ public class HabitServiceImpl implements HabitService {
                 ex.printStackTrace();
             }
         }
-        return habitId;
+        return Optional.empty();
     }
 
     @Override
-    public void updateHabit(Long id, String newName, String newDescription, Frequency newFrequency) {
+    public Optional<Habit> getHabit(Long habitId) {
+        try {
+            connection.setAutoCommit(false);
+
+            Optional<Habit> habit = habitRepository.findById(habitId);
+            if (habit.isPresent()) {
+                logger.info("Name: " + habit.get().getName());
+                logger.info("Description: " + habit.get().getDescription());
+                logger.info("Created at: " + habit.get().getCreatedAt());
+                logger.info("Frequency: " + habit.get().getFrequency().toString() + '\n');
+            } else
+                logger.info("No such habit");
+
+            connection.commit();
+            return habit;
+        } catch (SQLException e) {
+            try {
+                connection.rollback();
+            } catch (SQLException rollbackEx) {
+                rollbackEx.printStackTrace();
+            }
+            e.printStackTrace();
+        } finally {
+            try {
+                connection.setAutoCommit(true);
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public boolean updateHabit(Long id, Habit newHabit) {
+
+        boolean upd = false;
 
         try {
             connection.setAutoCommit(false);
@@ -183,30 +232,25 @@ public class HabitServiceImpl implements HabitService {
             Optional<Habit> habit = habitRepository.findById(id);
 
             if (habit.isEmpty()) {
-                System.out.println("Habit with this id does not exist!");
-                throw new SQLException();
+                logger.info("Habit with this id does not exist!");
+                return false;
             }
 
             // Check for the uniqueness of the new name
-            if (newName != null && !newName.isEmpty() && habitRepository.findByName(newName, habit.get().getUserId()).isPresent()) {
-                System.out.println("Name already in use by another account!");
-                throw new SQLException();
+            if (newHabit.getName() != null && !newHabit.getName().isEmpty() && habitRepository.findByName(newHabit.getName(), habit.get().getUserId()).isPresent()) {
+                logger.info("Name already in use by another account!");
+                return false;
             }
 
-            if (newName != null && !newName.isEmpty()) {
-                habit.get().setName(newName);
-            }
-            if (newDescription != null && !newDescription.isEmpty()) {
-                habit.get().setDescription(newDescription);
-            }
-            if (newFrequency != null) {
-                habit.get().setFrequency(newFrequency);
-            }
+            habit.get().setName(newHabit.getName());
+            habit.get().setDescription(newHabit.getDescription());
+            habit.get().setFrequency(newHabit.getFrequency());
 
             habitRepository.update(id, habit.get());
-            System.out.println("Habit updated successfully!");
+            logger.info("Habit updated successfully!");
 
             connection.commit();
+            upd = true;
         } catch (SQLException e) {
             try {
                 connection.rollback();
@@ -221,5 +265,6 @@ public class HabitServiceImpl implements HabitService {
                 ex.printStackTrace();
             }
         }
+        return upd;
     }
 }

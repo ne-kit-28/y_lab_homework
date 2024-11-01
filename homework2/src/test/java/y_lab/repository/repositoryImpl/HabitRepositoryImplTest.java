@@ -2,6 +2,7 @@ package y_lab.repository.repositoryImpl;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -89,6 +90,7 @@ public class HabitRepositoryImplTest {
     }
 
     @Test
+    @DisplayName("Сохраняет и ищет пользователя")
     void testSaveAndFindById() throws SQLException {
         // Insert user
         connection.prepareStatement("INSERT INTO domain.users (username) VALUES ('testuser');").execute();
@@ -107,6 +109,7 @@ public class HabitRepositoryImplTest {
     }
 
     @Test
+    @DisplayName("Удаление пользователя")
     void testDeleteHabit() throws SQLException {
         // Insert user
         connection.prepareStatement("INSERT INTO domain.users (username) VALUES ('testuser');").execute();
@@ -127,7 +130,8 @@ public class HabitRepositoryImplTest {
     }
 
     @Test
-    void testFindAllHabitsByUserId() throws SQLException {
+    @DisplayName("Получение всех привычек пользователя по userId")
+    void testFindAllHabits() throws SQLException {
         // Insert user
         connection.prepareStatement("INSERT INTO domain.users (username) VALUES ('testuser');").execute();
 
@@ -146,16 +150,12 @@ public class HabitRepositoryImplTest {
     }
 
     @Test
-    void testAdminTableInServiceSchema() throws SQLException {
-        // Insert into the admins table in the service schema
+    @DisplayName("Проверка, является ли пользователь администратором")
+    void testAdminTable() throws SQLException {
         connection.prepareStatement("INSERT INTO service.admins (id, email) VALUES (1, 'admin@test.com');").execute();
 
-        // When
         ResultSet resultSet = connection.prepareStatement("SELECT * FROM service.admins WHERE id = 1").executeQuery();
 
-
-
-        // Then
         assertTrue(resultSet.next());
         assertEquals("admin@test.com", resultSet.getString("email"));
     }
