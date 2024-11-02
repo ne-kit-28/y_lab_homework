@@ -58,27 +58,27 @@ public class AuditAndLoggingAspect {
         return proceed;
     }
 
-//    @AfterReturning(pointcut = "serviceMethods()", returning = "result")
-//    public void logAfterMethod(JoinPoint joinPoint, Object result) {
-//
-//        Long userId = UserContext.getUserId();
-//        if (userId == null)
-//            userId = -1L;
-//        String message = "Метод завершен: " + joinPoint.getSignature().getName()
-//                + ", возвращено значение: " + result;
-//
-//        AuditRecord record = new AuditRecord(userId, LocalDateTime.now(), message);
-//        auditService.createAudit(record);
-//    }
-//
-//    @AfterThrowing(pointcut = "serviceMethods()", throwing = "exception")
-//    public void logException(Throwable exception) {
-//        Long userId = UserContext.getUserId();
-//        if (userId == null)
-//            userId = -1L;
-//        String message = "Исключение " + exception.getMessage();
-//
-//        AuditRecord record = new AuditRecord(userId, LocalDateTime.now(), message);
-//        auditService.createAudit(record);
-//    }
+    @AfterReturning(pointcut = "execution(public * y_lab.service.serviceImpl.LoginServiceImpl.*(..))", returning = "result")
+    public void logAfterMethod(JoinPoint joinPoint, Object result) {
+
+        Long userId = UserContext.getUserId();
+        if (userId == null)
+            userId = -1L;
+        String message = "Метод завершен: " + joinPoint.getSignature().getName()
+                + ", возвращено значение: " + result;
+
+        AuditRecord record = new AuditRecord(userId, LocalDateTime.now(), message);
+        auditService.createAudit(record);
+    }
+
+    @AfterThrowing(pointcut = "execution(public * y_lab.service.serviceImpl.LoginServiceImpl.*(..))", throwing = "exception")
+    public void logException(Throwable exception) {
+        Long userId = UserContext.getUserId();
+        if (userId == null)
+            userId = -1L;
+        String message = "Исключение " + exception.getMessage();
+
+        AuditRecord record = new AuditRecord(userId, LocalDateTime.now(), message);
+        auditService.createAudit(record);
+    }
 }

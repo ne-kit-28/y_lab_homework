@@ -38,6 +38,7 @@ public class HabitController {
     public ResponseEntity<ArrayList<HabitResponseDto>> getHabits(
             @Parameter(description = "ID of the user to retrieve habits for", required = true)
             @PathVariable("userId") @Positive long userId,
+
             @Parameter(description = "Filter to apply on habits", required = true)
             @PathVariable("filter") String filter) {
         return ResponseEntity.ok(habitMapper.habitsToHabitResponseDtos(habitService.getHabits(userId, filter)));
@@ -48,6 +49,7 @@ public class HabitController {
     public ResponseEntity<HabitResponseDto> getHabit(
             @Parameter(description = "ID of the user to retrieve the habit for", required = true)
             @PathVariable("userId") @Positive long userId,
+
             @Parameter(description = "Name of the habit to retrieve", required = true)
             @PathVariable("name") String name) {
         Optional<Habit> habit = habitService.getHabit(name, userId);
@@ -60,6 +62,7 @@ public class HabitController {
     public ResponseEntity<HabitResponseDto> createHabit(
             @Parameter(description = "ID of the user to create the habit for", required = true)
             @PathVariable("userId") @Positive long userId,
+
             @Parameter(description = "Habit details to be created", required = true)
             @RequestBody @Valid HabitRequestDto habitRequestDto) {
         habitService.createHabit(userId, habitMapper.habitRequestDtoToHabit(habitRequestDto));
@@ -73,6 +76,7 @@ public class HabitController {
     public ResponseEntity<Void> updateHabit(
             @Parameter(description = "ID of the habit to update", required = true)
             @PathVariable("habitId") @Positive long habitId,
+
             @Parameter(description = "Updated habit details", required = true)
             @RequestBody @Valid HabitRequestDto habitRequestDto) {
         if (habitService.updateHabit(habitId, habitMapper.habitRequestDtoToHabit(habitRequestDto)))

@@ -43,7 +43,6 @@ public class UserServiceImpl implements UserService {
         this.connection = dataSource.getConnection();
     }
 
-    //Проверка на возможность обновить пользователя
     private boolean checkUser(User user, long id) throws SQLException {
 
         Optional<User> myUser = userRepository.findById(id);

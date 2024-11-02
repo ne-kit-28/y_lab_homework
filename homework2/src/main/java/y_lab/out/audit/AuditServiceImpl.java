@@ -17,7 +17,6 @@ public class AuditServiceImpl implements AuditService {
 
     @Autowired
     public AuditServiceImpl (AuditRepositoryImpl auditRepository) {
-        logger.info("AuditServiceImpl create!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         this.auditRepository = auditRepository;
     }
 

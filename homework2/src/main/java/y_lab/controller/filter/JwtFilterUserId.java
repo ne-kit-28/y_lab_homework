@@ -49,7 +49,7 @@ public class JwtFilterUserId implements Filter {
             return;
         }
 
-        token = token.substring(7); // Убираем Bearer
+        token = token.substring(7);
 
         try {
 

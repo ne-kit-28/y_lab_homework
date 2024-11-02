@@ -116,7 +116,6 @@ public class ProgressServiceImpl implements ProgressService {
                     .filter(progress -> progress.getDate().isAfter(startDate))
                     .toList());
 
-            // Generate statistics
             long completedDays = filteredProgresses.size();
 
             returnStr += "Habit: " + habit.getName();
@@ -153,7 +152,6 @@ public class ProgressServiceImpl implements ProgressService {
                     .sorted(Comparator.comparing(Progress::getDate))
                     .toList());
 
-            // Calculate current streak
             int streak = 1;
             int maxStreak = 1;
             for (int i = 1; i < progressList.size(); ++i) {
@@ -182,11 +180,10 @@ public class ProgressServiceImpl implements ProgressService {
     }
 
     @Override
-    public String generateReport(Long habitId, String period) { // String {"day", "week", "month"}
-        // Generate progress statistics
+    public String generateReport(Long habitId, String period) {
+
         String statistic = this.generateProgressStatistics(habitId, period);
 
-        // Calculate streak
         String streak = this.calculateStreak(habitId);
 
         System.out.println(statistic + '\n' + streak);

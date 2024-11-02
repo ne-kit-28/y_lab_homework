@@ -1,6 +1,5 @@
 package y_lab.controller.admin;
 
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -37,7 +36,7 @@ public class UserAdminController {
 
     @GetMapping(value = "/{userId}/block/{status}")
     public ResponseEntity<Void> blockUser(@PathVariable("userId") @Positive long userId,
-                                          @PathVariable("status") @Pattern(regexp = "true|false") boolean status) {
+                                          @PathVariable("status") boolean status) {
         if (userService.blockUser(userId, status))
             return ResponseEntity.ok().build();
         else

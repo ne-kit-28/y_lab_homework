@@ -82,7 +82,6 @@ public class LoginServiceImpl implements LoginService {
     }
 
     private void sendResetEmail(String email, String token, String element) {
-        // In an actual application, this would handle sending an email
         System.out.println("Email sent to " + email + " with " + element + token);
     }
 

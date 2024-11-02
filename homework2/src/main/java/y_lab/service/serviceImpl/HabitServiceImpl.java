@@ -242,7 +242,6 @@ public class HabitServiceImpl implements HabitService {
                 return false;
             }
 
-            // Check for the uniqueness of the new name
             if (newHabit.getName() != null && !newHabit.getName().isEmpty() && habitRepository.findByName(newHabit.getName(), habit.get().getUserId()).isPresent()) {
                 logger.info("Name already in use by another account!");
                 return false;

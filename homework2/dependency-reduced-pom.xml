@@ -115,6 +115,12 @@
   </build>
   <dependencies>
     <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-test</artifactId>
+      <version>6.1.6</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
       <version>1.18.30</version>
@@ -279,7 +285,7 @@
     <dependency>
       <groupId>jakarta.servlet</groupId>
       <artifactId>jakarta.servlet-api</artifactId>
-      <version>5.0.0</version>
+      <version>6.1.0</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>
@@ -297,7 +303,7 @@
     <jackson.databind.version>2.17.2</jackson.databind.version>
     <aspectjweaver.version>1.9.22</aspectjweaver.version>
     <jakarta.el.impl.version>3.0.4</jakarta.el.impl.version>
-    <jakarta.validation.version>3.0.2</jakarta.validation.version>
+    <jakarta.validation.version>3.1.0</jakarta.validation.version>
     <testcontainers.version>1.19.0</testcontainers.version>
     <postgresql.version>42.7.4</postgresql.version>
     <hibernate.validator.version>8.0.1.Final</hibernate.validator.version>
