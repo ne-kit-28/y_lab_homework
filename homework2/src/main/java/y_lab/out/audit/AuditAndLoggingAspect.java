@@ -1,20 +1,21 @@
 package y_lab.out.audit;
 
-
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.*;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.context.annotation.Scope;
-import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 
 /**
- * Aspect for auditing and logging method execution details.
+ * Аспект {@code AuditAndLoggingAspect} отвечает за аудит и логирование
+ * деталей выполнения методов в сервисном слое приложения.
+ *
+ * Этот аспект перехватывает вызовы методов в сервисном слое и создает записи аудита
+ * с указанием идентификатора пользователя, времени выполнения и имени метода.
  */
 @Aspect
 @Component
@@ -22,14 +23,27 @@ public class AuditAndLoggingAspect {
 
     private final AuditService auditService;
 
+    /**
+     * Создает экземпляр {@code AuditAndLoggingAspect} с указанным сервисом аудита.
+     *
+     * @param auditService сервис для обработки записей аудита.
+     */
     @Autowired
     public AuditAndLoggingAspect(@Lazy AuditServiceImpl auditService) {
         this.auditService = auditService;
     }
 
+    /**
+     * Определяет точку соединения для выполнения методов в сервисном слое.
+     */
     @Pointcut("execution(public * y_lab.service.serviceImpl.*.*(..))")
     public void serviceLayerExecution() {}
 
+    /**
+     * Логирует начало выполнения метода и создает запись аудита до его вызова.
+     *
+     * @param joinPoint информация о вызванном методе.
+     */
     @Before("serviceLayerExecution()")
     public void logAudit(JoinPoint joinPoint) {
         Long userId = UserContext.getUserId();
@@ -41,6 +55,13 @@ public class AuditAndLoggingAspect {
         auditService.createAudit(record);
     }
 
+    /**
+     * Логирует время выполнения метода и создает запись аудита после его завершения.
+     *
+     * @param joinPoint информация о вызванном методе.
+     * @return результат выполнения метода.
+     * @throws Throwable если при выполнении метода возникает исключение.
+     */
     @Around("serviceLayerExecution()")
     public Object logExecutionTime(ProceedingJoinPoint joinPoint) throws Throwable {
         long start = System.currentTimeMillis();
@@ -60,6 +81,12 @@ public class AuditAndLoggingAspect {
         return proceed;
     }
 
+    /**
+     * Логирует завершение метода и создает запись аудита с возвращаемым значением.
+     *
+     * @param joinPoint информация о вызванном методе.
+     * @param result возвращаемое значение метода.
+     */
     @AfterReturning(pointcut = "serviceLayerExecution()", returning = "result")
     public void logAfterMethod(JoinPoint joinPoint, Object result) {
 
@@ -73,6 +100,11 @@ public class AuditAndLoggingAspect {
         auditService.createAudit(record);
     }
 
+    /**
+     * Логирует исключения, возникающие во время выполнения метода.
+     *
+     * @param exception исключение, возникшее при выполнении метода.
+     */
     @AfterThrowing(pointcut = "serviceLayerExecution()", throwing = "exception")
     public void logException(Throwable exception) {
         Long userId = UserContext.getUserId();

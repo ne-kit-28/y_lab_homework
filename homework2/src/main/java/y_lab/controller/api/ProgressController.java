@@ -11,8 +11,6 @@ import org.springframework.web.bind.annotation.*;
 import y_lab.dto.ProgressResponseDto;
 import y_lab.service.HabitService;
 import y_lab.service.ProgressService;
-import y_lab.service.serviceImpl.HabitServiceImpl;
-import y_lab.service.serviceImpl.ProgressServiceImpl;
 
 @RestController
 @RequestMapping(value = "/progress")

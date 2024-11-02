@@ -1,5 +1,5 @@
 # y_lab_homework
-Homework3
+Homework4
 
 Запуск:
 1. Убедитесь, что у вас установлены необходимые инструменты:
@@ -12,7 +12,7 @@ mvn -v
 
 git clone https://github.com/ne-kit-28/y_lab_homework.git
 cd y_lab_homework
-git checkout -b homework3 origin/homework3
+git checkout -b homework4 origin/homework4
 cd homework2
 
 3. Запустите докер

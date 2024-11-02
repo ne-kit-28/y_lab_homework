@@ -14,7 +14,6 @@ import y_lab.dto.HabitResponseDto;
 import y_lab.mapper.HabitMapper;
 import y_lab.mapper.HabitMapperImpl;
 import y_lab.service.HabitService;
-import y_lab.service.serviceImpl.HabitServiceImpl;
 
 import java.util.ArrayList;
 import java.util.Optional;

@@ -1,5 +1,6 @@
 package y_lab.controller.api;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -14,7 +15,6 @@ import y_lab.dto.LoginUpDto;
 import y_lab.mapper.LoginMapper;
 import y_lab.mapper.LoginMapperImpl;
 import y_lab.service.LoginService;
-import y_lab.service.serviceImpl.LoginServiceImpl;
 import y_lab.util.JwtUtil;
 
 @RestController
@@ -31,6 +31,7 @@ public class LoginController {
         loginMapper = new LoginMapperImpl();
     }
 
+    @Operation(summary = "User sign in", description = "Authenticate user and return JWT token")
     @PostMapping(value = "/signIn")
     public ResponseEntity<LoginResponseDto> signIn(@RequestBody @Valid LoginInDto loginInDto) {
         LoginResponseDto loginResponseDto = loginService.login(loginMapper.loginInDtoToUser(loginInDto));
@@ -42,6 +43,7 @@ public class LoginController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(loginResponseDto);
     }
 
+    @Operation(summary = "User sign up", description = "Register a new user")
     @PostMapping(value = "/signUp")
     public ResponseEntity<LoginResponseDto> signUp(@RequestBody @Valid LoginUpDto loginUpDto) {
         LoginResponseDto loginResponseDto = loginService.register(loginMapper.loginUpDtoToUser(loginUpDto));
@@ -51,6 +53,7 @@ public class LoginController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(loginResponseDto);
     }
 
+    @Operation(summary = "Request password reset", description = "Send a password reset request to the user")
     @PostMapping(value = "/requestReset/{email}")
     public ResponseEntity<Void> request(@Parameter(description = "User's email address") @PathVariable("email") String email) {
         boolean bool = loginService.requestPasswordReset(email);
@@ -65,6 +68,7 @@ public class LoginController {
                     .build();
     }
 
+    @Operation(summary = "Reset password", description = "Reset user password using reset token")
     @PostMapping(value = "/reset")
     public ResponseEntity<LoginResponseDto> reset(@RequestBody @Valid LoginResetDto loginResetDto) {
         LoginResponseDto loginResponseDto = loginService.resetPassword(loginMapper.loginResetDtoToUser(loginResetDto));
