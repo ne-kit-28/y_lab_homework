@@ -21,6 +21,7 @@ import y_lab.domain.enums.Frequency;
 import y_lab.dto.HabitRequestDto;
 import y_lab.dto.HabitResponseDto;
 import y_lab.mapper.HabitMapper;
+import y_lab.service.HabitService;
 import y_lab.service.serviceImpl.HabitServiceImpl;
 
 import java.time.LocalDate;
@@ -33,7 +34,7 @@ public class HabitControllerTest {
     private ObjectMapper objectMapper;
 
     @Mock
-    private HabitServiceImpl habitService;
+    private HabitService habitService;
 
     @Mock
     private HabitMapper habitMapper;

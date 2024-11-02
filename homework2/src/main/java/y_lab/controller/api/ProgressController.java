@@ -23,7 +23,7 @@ public class ProgressController {
     private final HabitService habitService;
 
     @Autowired
-    public ProgressController(HabitServiceImpl habitService, ProgressServiceImpl progressService) {
+    public ProgressController(HabitService habitService, ProgressService progressService) {
         this.progressService = progressService;
         this.habitService = habitService;
     }

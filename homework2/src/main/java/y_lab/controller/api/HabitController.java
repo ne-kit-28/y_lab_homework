@@ -28,7 +28,7 @@ public class HabitController {
     private final HabitMapper habitMapper;
 
     @Autowired
-    public HabitController(HabitServiceImpl habitService) {
+    public HabitController(HabitService habitService) {
         this.habitService = habitService;
         this.habitMapper = new HabitMapperImpl();
     }

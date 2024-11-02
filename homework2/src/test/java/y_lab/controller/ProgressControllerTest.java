@@ -11,6 +11,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import y_lab.controller.api.ProgressController;
+import y_lab.service.HabitService;
+import y_lab.service.ProgressService;
 import y_lab.service.serviceImpl.HabitServiceImpl;
 import y_lab.service.serviceImpl.ProgressServiceImpl;
 
@@ -26,10 +28,10 @@ class ProgressControllerTest {
     private ObjectMapper objectMapper;
 
     @Mock
-    private ProgressServiceImpl progressService;
+    private ProgressService progressService;
 
     @Mock
-    private HabitServiceImpl habitService;
+    private HabitService habitService;
 
     @InjectMocks
     private ProgressController progressController;

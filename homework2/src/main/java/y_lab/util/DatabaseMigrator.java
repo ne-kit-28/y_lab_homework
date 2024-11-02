@@ -49,6 +49,7 @@ public class DatabaseMigrator implements ApplicationListener<ContextRefreshedEve
             database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(connection));
             Liquibase liquibase = new Liquibase("db/changelog/db.changelog-master.yaml", new ClassLoaderResourceAccessor(), database);
             liquibase.update(new Contexts(), new LabelExpression());
+            logger.info("Migrations is done!");
         } catch (LiquibaseException e) {
             logger.info("Migrations failed!");
             e.printStackTrace();

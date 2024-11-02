@@ -51,13 +51,11 @@ public class AuditRepositoryImpl implements AuditRepository {
              PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setLong(1, userId);
             ResultSet resultSet = stmt.executeQuery();
-
             while (resultSet.next()) {
                 AuditRecord auditRecord = new AuditRecord(
-                        resultSet.getLong(1)
-                , LocalDateTime.parse(resultSet.getString(2))
-                , resultSet.getString(3));
-
+                        resultSet.getLong(2)
+                , LocalDateTime.parse(resultSet.getString(3))
+                , resultSet.getString(4));
                 auditRecords.add(auditRecord);
             }
         }

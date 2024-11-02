@@ -15,7 +15,8 @@ import y_lab.domain.User;
 import y_lab.dto.UserRequestDto;
 import y_lab.dto.UserResponseDto;
 import y_lab.mapper.UserMapper;
-import y_lab.service.serviceImpl.UserServiceImpl;
+import y_lab.service.UserService;
+
 
 import java.util.Optional;
 
@@ -31,7 +32,7 @@ class UserControllerTest {
     private ObjectMapper objectMapper;
 
     @Mock
-    private UserServiceImpl userService;
+    private UserService userService;
 
     @Mock
     private UserMapper userMapper;

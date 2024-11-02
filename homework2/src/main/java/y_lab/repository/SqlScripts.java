@@ -81,6 +81,6 @@ public class SqlScripts {
                     "VALUES (?, ?, ?)";
 
     public static final String AUDIT_FIND_AUDIT_BY_USER_ID =
-            "SELECT * FROM service.audit" +
+            "SELECT * FROM service.audit " +
                     "WHERE user_id = ?";
 }

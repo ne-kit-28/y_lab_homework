@@ -11,8 +11,6 @@ import y_lab.domain.User;
 import y_lab.out.audit.AuditRecord;
 import y_lab.out.audit.AuditService;
 import y_lab.service.UserService;
-import y_lab.out.audit.AuditServiceImpl;
-import y_lab.service.serviceImpl.UserServiceImpl;
 
 import java.util.ArrayList;
 
@@ -24,7 +22,7 @@ public class UserAdminController {
     private final AuditService auditService;
 
     @Autowired
-    public UserAdminController (UserServiceImpl userService, AuditServiceImpl auditService){
+    public UserAdminController (UserService userService, AuditService auditService){
         this.userService = userService;
         this.auditService = auditService;
     }

@@ -18,7 +18,6 @@ import java.time.LocalDateTime;
  */
 @Aspect
 @Component
-@Scope(proxyMode = ScopedProxyMode.TARGET_CLASS)
 public class AuditAndLoggingAspect {
 
     private final AuditService auditService;
@@ -28,7 +27,10 @@ public class AuditAndLoggingAspect {
         this.auditService = auditService;
     }
 
-    @Before("execution(public * y_lab.service.serviceImpl.LoginServiceImpl.*(..))")
+    @Pointcut("execution(public * y_lab.service.serviceImpl.*.*(..))")
+    public void serviceLayerExecution() {}
+
+    @Before("serviceLayerExecution()")
     public void logAudit(JoinPoint joinPoint) {
         Long userId = UserContext.getUserId();
         if (userId == null)
@@ -39,7 +41,7 @@ public class AuditAndLoggingAspect {
         auditService.createAudit(record);
     }
 
-    @Around("execution(public * y_lab.service.serviceImpl.LoginServiceImpl.*(..))")
+    @Around("serviceLayerExecution()")
     public Object logExecutionTime(ProceedingJoinPoint joinPoint) throws Throwable {
         long start = System.currentTimeMillis();
         Object proceed = joinPoint.proceed();
@@ -58,7 +60,7 @@ public class AuditAndLoggingAspect {
         return proceed;
     }
 
-    @AfterReturning(pointcut = "execution(public * y_lab.service.serviceImpl.LoginServiceImpl.*(..))", returning = "result")
+    @AfterReturning(pointcut = "serviceLayerExecution()", returning = "result")
     public void logAfterMethod(JoinPoint joinPoint, Object result) {
 
         Long userId = UserContext.getUserId();
@@ -71,7 +73,7 @@ public class AuditAndLoggingAspect {
         auditService.createAudit(record);
     }
 
-    @AfterThrowing(pointcut = "execution(public * y_lab.service.serviceImpl.LoginServiceImpl.*(..))", throwing = "exception")
+    @AfterThrowing(pointcut = "serviceLayerExecution()", throwing = "exception")
     public void logException(Throwable exception) {
         Long userId = UserContext.getUserId();
         if (userId == null)

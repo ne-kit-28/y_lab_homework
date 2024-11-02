@@ -29,7 +29,7 @@ public class UserController {
     private final UserMapper userMapper;
 
     @Autowired
-    public UserController(UserServiceImpl userService) {
+    public UserController(UserService userService) {
         this.userService = userService;
         this.userMapper = new UserMapperImpl();
     }

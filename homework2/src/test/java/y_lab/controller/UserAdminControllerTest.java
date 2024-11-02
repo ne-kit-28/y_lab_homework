@@ -12,7 +12,9 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import y_lab.controller.admin.UserAdminController;
 import y_lab.domain.User;
 import y_lab.out.audit.AuditRecord;
+import y_lab.out.audit.AuditService;
 import y_lab.out.audit.AuditServiceImpl;
+import y_lab.service.UserService;
 import y_lab.service.serviceImpl.UserServiceImpl;
 
 import java.time.LocalDateTime;
@@ -32,10 +34,10 @@ class UserAdminControllerTest {
     private MockMvc mockMvc;
 
     @Mock
-    private UserServiceImpl userService;
+    private UserService userService;
 
     @Mock
-    private AuditServiceImpl auditService;
+    private AuditService auditService;
 
     @InjectMocks
     private UserAdminController userAdminController;
