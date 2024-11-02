@@ -20,12 +20,11 @@ import y_lab.repository.repositoryImpl.UserRepositoryImpl;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers
 public class ProgressServiceImplTest {
@@ -58,11 +57,10 @@ public class ProgressServiceImplTest {
         CreateSchema.createSchema(connection);
 
         UserRepositoryImpl userRepository = new UserRepositoryImpl(dataSource);
-        userRepository.save(new User("test@example.com", "hashedPassword", "TestUser",false, Role.REGULAR));
+        userRepository.save(new User("test@example.com", "hashedPassword", "TestUser", false, Role.REGULAR));
 
         HabitRepositoryImpl habitRepository = new HabitRepositoryImpl(dataSource);
         habitRepository.save(new Habit(null, 1L, "sleep", "a lot", Frequency.DAILY, LocalDate.now()));
-
 
         progressRepository = new ProgressRepositoryImpl(dataSource);
         progressService = new ProgressServiceImpl(habitRepository, progressRepository, dataSource);
@@ -90,9 +88,9 @@ public class ProgressServiceImplTest {
         progressService.createProgress(habitId);
 
         Optional<Progress> progress = progressRepository.findByHabitId(habitId).stream().findFirst();
-        assertTrue(progress.isPresent());
-        assertEquals(habitId, progress.get().getHabitId());
-        assertEquals(LocalDate.now(), progress.get().getDate());
+        assertThat(progress).isPresent();
+        assertThat(progress.get().getHabitId()).isEqualTo(habitId);
+        assertThat(progress.get().getDate()).isEqualTo(LocalDate.now());
     }
 
     @Test
@@ -112,8 +110,8 @@ public class ProgressServiceImplTest {
         String output = outputStream.toString();
         System.setOut(originalOut);
 
-        assertTrue(output.contains("Completed: 2"));
-        assertTrue(output.contains("Completion rate: 100%"));
+        assertThat(output).contains("Completed: 2");
+        assertThat(output).contains("Completion rate: 100%");
     }
 
     @Test
@@ -134,8 +132,8 @@ public class ProgressServiceImplTest {
         String output = outputStream.toString();
         System.setOut(originalOut);
 
-        assertTrue(output.contains("Current streak: 2"));
-        assertTrue(output.contains("Max streak: 2"));
+        assertThat(output).contains("Current streak: 2");
+        assertThat(output).contains("Max streak: 2");
     }
 
     @Test
@@ -154,7 +152,7 @@ public class ProgressServiceImplTest {
         String output = outputStream.toString();
         System.setOut(originalOut);
 
-        assertFalse(output.contains("Sql error"));
-        assertFalse(output.contains("no habit"));
+        assertThat(output).doesNotContain("Sql error");
+        assertThat(output).doesNotContain("no habit");
     }
 }

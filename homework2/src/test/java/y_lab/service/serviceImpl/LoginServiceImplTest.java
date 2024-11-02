@@ -10,12 +10,10 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import y_lab.domain.User;
 import y_lab.dto.LoginResponseDto;
-import y_lab.repository.UserRepository;
 import y_lab.repository.repositoryImpl.UserRepositoryImpl;
 import y_lab.util.HashFunction;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,7 +46,6 @@ public class LoginServiceImplTest {
         connection = dataSource.getConnection();
 
         UserRepositoryImpl userRepository = new UserRepositoryImpl(dataSource);
-
         loginService = new LoginServiceImpl(userRepository, dataSource);
 
         CreateSchema.createSchema(connection);
@@ -71,7 +68,6 @@ public class LoginServiceImplTest {
     @Test
     @DisplayName("login and registration")
     public void Login() {
-
         User user = User.builder()
                 .name("John Doe")
                 .email("john.doe@example.com")

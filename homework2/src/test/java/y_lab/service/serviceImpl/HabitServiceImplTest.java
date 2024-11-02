@@ -17,12 +17,11 @@ import y_lab.repository.repositoryImpl.ProgressRepositoryImpl;
 import y_lab.repository.repositoryImpl.UserRepositoryImpl;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.*;
 
 @Testcontainers
 public class HabitServiceImplTest {
@@ -52,12 +51,10 @@ public class HabitServiceImplTest {
 
         connection = dataSource.getConnection();
 
-
         CreateSchema.createSchema(connection);
 
         UserRepositoryImpl userRepository = new UserRepositoryImpl(dataSource);
-
-        userRepository.save(new User("test@example.com", "hashedPassword", "TestUser",false, Role.REGULAR));
+        userRepository.save(new User("test@example.com", "hashedPassword", "TestUser", false, Role.REGULAR));
         habitRepository = new HabitRepositoryImpl(dataSource);
         ProgressRepositoryImpl progressRepository = new ProgressRepositoryImpl(dataSource);
         habitService = new HabitServiceImpl(habitRepository, progressRepository, dataSource);
@@ -93,9 +90,9 @@ public class HabitServiceImplTest {
         habitService.createHabit(userId, habit);
 
         ArrayList<Habit> habits = habitService.getHabits(1L, "daily");
-        assertEquals(1, habits.size());
-        assertEquals(name, habits.get(0).getName());
-        assertEquals(description, habits.get(0).getDescription());
+        assertThat(habits).hasSize(1);
+        assertThat(habits.get(0).getName()).isEqualTo(name);
+        assertThat(habits.get(0).getDescription()).isEqualTo(description);
     }
 
     @Test
@@ -117,7 +114,7 @@ public class HabitServiceImplTest {
         habitService.deleteHabit(opHabit.get().getId());
 
         ArrayList<Habit> habits = habitService.getHabits(1L, "daily");
-        assertTrue(habits.isEmpty(), "Habit should be deleted");
+        assertThat(habits).isEmpty();
     }
 
     @Test
@@ -137,7 +134,7 @@ public class HabitServiceImplTest {
                 .build());
 
         ArrayList<Habit> habits = habitService.getHabits(userId, "daily");
-        assertEquals(2, habits.size());
+        assertThat(habits).hasSize(2);
     }
 
     @Test
@@ -172,9 +169,8 @@ public class HabitServiceImplTest {
 
         Habit updatedHabit = habitRepository.findById(opHabit.get().getId()).orElseThrow();
 
-        assertEquals(newName, updatedHabit.getName(), "Habit name should be updated.");
-        assertEquals(newDescription, updatedHabit.getDescription(), "Habit description should be updated.");
-        assertEquals(newFrequency, updatedHabit.getFrequency(), "Habit frequency should be updated.");
+        assertThat(updatedHabit.getName()).isEqualTo(newName);
+        assertThat(updatedHabit.getDescription()).isEqualTo(newDescription);
+        assertThat(updatedHabit.getFrequency()).isEqualTo(newFrequency);
     }
-
 }

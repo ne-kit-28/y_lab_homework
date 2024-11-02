@@ -21,6 +21,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 @Testcontainers
@@ -88,10 +89,10 @@ class UserServiceImplTest {
         userService.editUser(userId, user);
 
         Optional<User> updatedUser = userService.getUser("updated@example.com");
-        assertTrue(updatedUser.isPresent());
-        assertEquals("Updated User", updatedUser.get().getName());
-        assertEquals("updated@example.com", updatedUser.get().getEmail());
-        assertEquals(HashFunction.hashPassword("newPassword"), updatedUser.get().getPasswordHash());
+        assertThat(updatedUser).isPresent();
+        assertThat(updatedUser.get().getName()).isEqualTo("Updated User");
+        assertThat(updatedUser.get().getEmail()).isEqualTo("updated@example.com");
+        assertThat(updatedUser.get().getPasswordHash()).isEqualTo(HashFunction.hashPassword("newPassword"));
     }
 
     @Test
@@ -100,7 +101,7 @@ class UserServiceImplTest {
         Optional<User> deletedUser = userService.getUser("test@example.com");
         userService.deleteUser(deletedUser.get().getId());
         deletedUser = userService.getUser("test@example.com");
-        assertFalse(deletedUser.isPresent(), "User should be deleted");
+        assertThat(deletedUser.isPresent()).isFalse();
     }
 
     @Test
@@ -110,8 +111,8 @@ class UserServiceImplTest {
         userService.blockUser(1L, true);
 
         Optional<User> blockedUser = userService.getUser("test@example.com");
-        assertTrue(blockedUser.isPresent(), "User should exist");
-        assertTrue(blockedUser.get().isBlock(), "User should be blocked");
+        assertThat(blockedUser).isPresent();
+        assertThat(blockedUser.get().isBlock()).isTrue();
     }
 
     @Test
@@ -131,7 +132,7 @@ class UserServiceImplTest {
 
         ArrayList<User> users = userService.getUsers();
 
-        assertEquals(3, users.size(), "Should return 3 users");
+        assertThat(users.size()).isEqualTo(3);
 
         assertTrue(users.stream().anyMatch(u -> "test@example.com".equals(u.getEmail())));
         assertTrue(users.stream().anyMatch(u -> "user1@example.com".equals(u.getEmail())));

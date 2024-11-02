@@ -18,6 +18,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 @Testcontainers
@@ -91,65 +92,56 @@ public class ProgressRepositoryImplTest {
     @Test
     @DisplayName("Сохранение прогресса")
     void testSaveAndFindById() throws SQLException {
-        // Insert user and habit
+
         connection.prepareStatement("INSERT INTO domain.users (username) VALUES ('testuser');").execute();
         connection.prepareStatement("INSERT INTO domain.habits (user_id, name, description, frequency, created_at) " +
                 "VALUES (1, 'Exercise', 'Daily Exercise', 'DAILY', '2024-10-19');").execute();
 
-        // Given
         Progress progress = new Progress(null, 1L, 1L, LocalDate.now());
 
-        // When
         progressRepository.save(progress);
 
-        // Then
         Optional<Progress> foundProgress = progressRepository.findById(1L);
-        assertTrue(foundProgress.isPresent());
-        assertEquals(1L, foundProgress.get().getUserId());
-        assertEquals(1L, foundProgress.get().getHabitId());
-        assertEquals(LocalDate.now(), foundProgress.get().getDate());
+        assertThat(foundProgress).isPresent();
+        assertThat(foundProgress.get().getUserId()).isEqualTo(1L);
+        assertThat(foundProgress.get().getHabitId()).isEqualTo(1L);
+        assertThat(foundProgress.get().getDate()).isEqualTo(LocalDate.now());
     }
 
     @Test
     @DisplayName("Удаление всех выполнений")
     void testDeleteAllByHabitId() throws SQLException {
-        // Insert user and habit
+
         connection.prepareStatement("INSERT INTO domain.users (username) VALUES ('testuser');").execute();
         connection.prepareStatement("INSERT INTO domain.habits (user_id, name, description, frequency, created_at) " +
                 "VALUES (1, 'Exercise', 'Daily Exercise', 'DAILY', '2024-10-19');").execute();
 
-        // Insert progress entries
         Progress progress1 = new Progress(null, 1L, 1L, LocalDate.now());
         Progress progress2 = new Progress(null, 1L, 1L, LocalDate.now().minusDays(1));
         progressRepository.save(progress1);
         progressRepository.save(progress2);
 
-        // When
         progressRepository.deleteAllByHabitId(1L);
 
-        // Then
         ResultSet resultSet = connection.prepareStatement("SELECT * FROM domain.progresses WHERE habit_id = 1").executeQuery();
-        assertFalse(resultSet.next());
+        assertThat(resultSet.next()).isFalse();
     }
 
     @Test
     @DisplayName("Получение списка выполнений по userId")
     void testFindByHabitId() throws SQLException {
-        // Insert user and habit
+
         connection.prepareStatement("INSERT INTO domain.users (username) VALUES ('testuser');").execute();
         connection.prepareStatement("INSERT INTO domain.habits (user_id, name, description, frequency, created_at) " +
                 "VALUES (1, 'Exercise', 'Daily Exercise', 'DAILY', '2024-10-19');").execute();
 
-        // Insert progress entries
         Progress progress1 = new Progress(null, 1L, 1L, LocalDate.now());
         Progress progress2 = new Progress(null, 1L, 1L, LocalDate.now().minusDays(1));
         progressRepository.save(progress1);
         progressRepository.save(progress2);
 
-        // When
         ArrayList<Progress> progressList = progressRepository.findByHabitId(1L);
 
-        // Then
-        assertEquals(2, progressList.size());
+        assertThat(progressList.size()).isEqualTo(2);
     }
 }

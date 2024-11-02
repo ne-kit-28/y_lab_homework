@@ -17,6 +17,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 @Testcontainers
@@ -83,9 +84,9 @@ public class UserRepositoryImplTest {
         userRepository.save(user);
 
         Optional<User> foundUser = userRepository.findById(1L);
-        assertTrue(foundUser.isPresent());
-        assertEquals("testuser@example.com", foundUser.get().getEmail());
-        assertEquals("Test User", foundUser.get().getName());
+        assertThat(foundUser).isPresent();
+        assertThat(foundUser.get().getEmail()).isEqualTo("testuser@example.com");
+        assertThat(foundUser.get().getName()).isEqualTo("Test User");
     }
 
     @Test
@@ -96,7 +97,7 @@ public class UserRepositoryImplTest {
 
         boolean emailExists = userRepository.isEmailExist("existinguser@example.com");
 
-        assertTrue(emailExists);
+        assertThat(emailExists).isTrue();
     }
 
     @Test
@@ -106,7 +107,7 @@ public class UserRepositoryImplTest {
 
         boolean isAdminEmail = userRepository.isAdminEmail("admin@example.com");
 
-        assertTrue(isAdminEmail);
+        assertThat(isAdminEmail).isTrue();
     }
 
     @Test
@@ -119,7 +120,7 @@ public class UserRepositoryImplTest {
 
         ArrayList<User> users = userRepository.getAll();
 
-        assertEquals(2, users.size());
+        assertThat(users.size()).isEqualTo(2);
     }
 
     @Test
@@ -131,7 +132,7 @@ public class UserRepositoryImplTest {
         userRepository.deleteById(1L);
 
         Optional<User> foundUser = userRepository.findById(1L);
-        assertFalse(foundUser.isPresent());
+        assertThat(foundUser.isPresent()).isFalse();
     }
 
     @Test
@@ -146,8 +147,8 @@ public class UserRepositoryImplTest {
         userRepository.update(1L, user);
 
         Optional<User> updatedUser = userRepository.findById(1L);
-        assertTrue(updatedUser.isPresent());
-        assertEquals("Updated User", updatedUser.get().getName());
-        assertEquals(Role.ADMINISTRATOR, updatedUser.get().getRole());
+        assertThat(updatedUser).isPresent();
+        assertThat(updatedUser.get().getName()).isEqualTo("Updated User");
+        assertThat(updatedUser.get().getRole()).isEqualTo(Role.ADMINISTRATOR);
     }
 }
