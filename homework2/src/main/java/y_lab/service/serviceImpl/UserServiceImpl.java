@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import y_lab.domain.User;
 import y_lab.domain.enums.Role;
 import y_lab.repository.HabitRepository;
@@ -24,23 +25,21 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 
 @Service
+@Transactional
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final HabitRepository habitRepository;
     private final ProgressRepository progressRepository;
-    private final Connection connection;
     private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
 
     @Autowired
     public UserServiceImpl(
             UserRepositoryImpl userRepository
             , HabitRepositoryImpl habitRepository
-            , ProgressRepositoryImpl progressRepository
-            , DataSource dataSource) throws SQLException {
+            , ProgressRepositoryImpl progressRepository) throws SQLException {
         this.userRepository = userRepository;
         this.habitRepository = habitRepository;
         this.progressRepository = progressRepository;
-        this.connection = dataSource.getConnection();
     }
 
     private boolean checkUser(User user, long id) throws SQLException {
@@ -68,8 +67,6 @@ public class UserServiceImpl implements UserService {
         boolean edit = false;
 
         try {
-            connection.setAutoCommit(false);
-
             Optional<User> myUser = userRepository.findById(id);
 
             if (!checkUser(user, id)) //валидация
@@ -81,23 +78,10 @@ public class UserServiceImpl implements UserService {
 
             userRepository.update(myUser.get().getId(), myUser.get());
 
-            connection.commit();
-
             logger.info("Profile updated successfully!");
             edit = true;
         } catch (SQLException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException rollbackEx) {
-                rollbackEx.printStackTrace();
-            }
             e.printStackTrace();
-        } finally {
-            try {
-                connection.setAutoCommit(true);
-            } catch (SQLException ex) {
-                ex.printStackTrace();
-            }
         }
         return edit;
     }
@@ -108,8 +92,6 @@ public class UserServiceImpl implements UserService {
         boolean edit = false;
 
         try {
-            connection.setAutoCommit(false);
-
             if (id == null) {
                 return false;
             }
@@ -121,23 +103,10 @@ public class UserServiceImpl implements UserService {
 
             userRepository.update(user.getId(), user);
 
-            connection.commit();
-
             logger.info("Profile block is " + user.isBlock());
             edit = true;
         } catch (SQLException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException rollbackEx) {
-                rollbackEx.printStackTrace();
-            }
             e.printStackTrace();
-        } finally {
-            try {
-                connection.setAutoCommit(true);
-            } catch (SQLException ex) {
-                ex.printStackTrace();
-            }
         }
         return edit;
     }
@@ -148,29 +117,14 @@ public class UserServiceImpl implements UserService {
         boolean edit = false;
 
         try {
-            connection.setAutoCommit(false);
-
             userRepository.deleteById(id);
             habitRepository.deleteAllByUserId(id);
             progressRepository.deleteAllByUserId(id);
 
-            connection.commit();
-
             logger.info("User and all habits were deleted!");
             edit = true;
         } catch (SQLException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException rollbackEx) {
-                rollbackEx.printStackTrace();
-            }
             e.printStackTrace();
-        } finally {
-            try {
-                connection.setAutoCommit(true);
-            } catch (SQLException ex) {
-                ex.printStackTrace();
-            }
         }
         return edit;
     }
@@ -181,24 +135,10 @@ public class UserServiceImpl implements UserService {
         Optional<User> user = Optional.empty();
 
         try {
-            connection.setAutoCommit(false);
-
             user = userRepository.findByEmail(email);
 
-            connection.commit();
         } catch (SQLException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException rollbackEx) {
-                rollbackEx.printStackTrace();
-            }
             e.printStackTrace();
-        } finally {
-            try {
-                connection.setAutoCommit(true);
-            } catch (SQLException ex) {
-                ex.printStackTrace();
-            }
         }
         return user;
     }
@@ -209,8 +149,6 @@ public class UserServiceImpl implements UserService {
         ArrayList<User> users = new ArrayList<>();
 
         try {
-            connection.setAutoCommit(false);
-
             users = new ArrayList<>(userRepository.getAll().stream()
                     .filter(user -> user.getRole().equals(Role.REGULAR))
                     .toList());
@@ -224,21 +162,8 @@ public class UserServiceImpl implements UserService {
                     logger.info("Is blocked: " + user.isBlock() + '\n');
                 }
             }
-
-            connection.commit();
         } catch (SQLException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException rollbackEx) {
-                rollbackEx.printStackTrace();
-            }
             e.printStackTrace();
-        } finally {
-            try {
-                connection.setAutoCommit(true);
-            } catch (SQLException ex) {
-                ex.printStackTrace();
-            }
         }
         return users;
     }

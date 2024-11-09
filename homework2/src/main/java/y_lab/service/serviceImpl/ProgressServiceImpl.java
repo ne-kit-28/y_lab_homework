@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import y_lab.domain.Habit;
 import y_lab.domain.Progress;
 import y_lab.domain.enums.Frequency;
@@ -14,6 +15,7 @@ import y_lab.repository.repositoryImpl.ProgressRepositoryImpl;
 import y_lab.service.ProgressService;
 
 import javax.sql.DataSource;
+import java.beans.Transient;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -28,17 +30,15 @@ import java.util.Optional;
 public class ProgressServiceImpl implements ProgressService {
     private final HabitRepository habitRepository;
     private final ProgressRepository progressRepository;
-    private final Connection connection;
     private static final Logger logger = LoggerFactory.getLogger(ProgressServiceImpl.class);
 
     @Autowired
     public ProgressServiceImpl(
             HabitRepositoryImpl habitRepository
             , ProgressRepositoryImpl progressRepository
-            , DataSource dataSource) throws SQLException {
+            ) throws SQLException {
         this.habitRepository = habitRepository;
         this.progressRepository = progressRepository;
-        this.connection = dataSource.getConnection();
     }
 
     private LocalDate calculateStartDate(String period) {
@@ -52,10 +52,9 @@ public class ProgressServiceImpl implements ProgressService {
     }
 
     @Override
+    @Transactional
     public boolean createProgress(Long habitId) {
         try {
-            connection.setAutoCommit(false);
-
             Optional<Habit> habit = habitRepository.findById(habitId);
             if (habit.isEmpty())
                 return false;
@@ -67,23 +66,10 @@ public class ProgressServiceImpl implements ProgressService {
                     .build();
             progressRepository.save(progress);
 
-            connection.commit();
-
             logger.info("The habit is complete");
             return true;
         } catch (SQLException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException rollbackEx) {
-                rollbackEx.printStackTrace();
-            }
             e.printStackTrace();
-        } finally {
-            try {
-                connection.setAutoCommit(true);
-            } catch (SQLException ex) {
-                ex.printStackTrace();
-            }
         }
         return false;
     }

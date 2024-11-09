@@ -54,7 +54,7 @@ class UserServiceImplTest {
         HabitRepositoryImpl habitRepository = new HabitRepositoryImpl(dataSource);
         ProgressRepositoryImpl progressRepository = new ProgressRepositoryImpl(dataSource);
 
-        userService = new UserServiceImpl(userRepository, habitRepository, progressRepository, dataSource);
+        userService = new UserServiceImpl(userRepository, habitRepository, progressRepository);
 
         CreateSchema.createSchema(connection);
 
@@ -118,7 +118,7 @@ class UserServiceImplTest {
     @Test
     @DisplayName("Получает список всех пользователей")
     void getUsers() throws SQLException {
-        LoginServiceImpl loginService = new LoginServiceImpl(new UserRepositoryImpl(dataSource), dataSource);
+        LoginServiceImpl loginService = new LoginServiceImpl(new UserRepositoryImpl(dataSource));
         loginService.register(User.builder()
                 .name("User One")
                 .email("user1@example.com")

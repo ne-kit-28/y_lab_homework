@@ -17,7 +17,7 @@ import y_lab.service.UserService;
 import java.util.ArrayList;
 
 @RestController
-@RequestMapping("/user")
+@RequestMapping("admin/user")
 public class UserAdminController {
 
     private final UserService userService;

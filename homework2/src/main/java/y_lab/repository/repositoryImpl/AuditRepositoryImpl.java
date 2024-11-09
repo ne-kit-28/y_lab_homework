@@ -3,6 +3,7 @@ package y_lab.repository.repositoryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jdbc.repository.query.Query;
 import org.springframework.stereotype.Repository;
 import y_lab.out.audit.AuditRecord;
 import y_lab.out.audit.AuditRepository;
@@ -42,6 +43,7 @@ public class AuditRepositoryImpl implements AuditRepository {
     }
 
     @Override
+    @Query
     public ArrayList<AuditRecord> getAuditByUserId(long userId) throws SQLException{
         ArrayList<AuditRecord> auditRecords = new ArrayList<>();
 

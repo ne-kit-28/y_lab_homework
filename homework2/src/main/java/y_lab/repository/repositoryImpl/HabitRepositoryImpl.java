@@ -4,7 +4,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
-import y_lab.config.DataSourceConfig;
 import y_lab.domain.Habit;
 import y_lab.domain.enums.Frequency;
 import y_lab.repository.HabitRepository;

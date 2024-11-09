@@ -57,7 +57,7 @@ public class HabitServiceImplTest {
         userRepository.save(new User("test@example.com", "hashedPassword", "TestUser", false, Role.REGULAR));
         habitRepository = new HabitRepositoryImpl(dataSource);
         ProgressRepositoryImpl progressRepository = new ProgressRepositoryImpl(dataSource);
-        habitService = new HabitServiceImpl(habitRepository, progressRepository, dataSource);
+        habitService = new HabitServiceImpl(habitRepository, progressRepository);
     }
 
     @AfterEach

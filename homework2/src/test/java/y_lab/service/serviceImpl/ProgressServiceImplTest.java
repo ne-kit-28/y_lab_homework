@@ -63,7 +63,7 @@ public class ProgressServiceImplTest {
         habitRepository.save(new Habit(null, 1L, "sleep", "a lot", Frequency.DAILY, LocalDate.now()));
 
         progressRepository = new ProgressRepositoryImpl(dataSource);
-        progressService = new ProgressServiceImpl(habitRepository, progressRepository, dataSource);
+        progressService = new ProgressServiceImpl(habitRepository, progressRepository);
     }
 
     @AfterEach

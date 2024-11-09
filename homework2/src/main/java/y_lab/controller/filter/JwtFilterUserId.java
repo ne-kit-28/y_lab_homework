@@ -56,11 +56,12 @@ public class JwtFilterUserId implements Filter {
             Long userIdFromToken = JwtUtil.getUserId(token);
 
             String url = req.getRequestURI();
+
             String[] pathSegments = url.split("/");
             Long userIdFromUrl = null;
 
-            if (pathSegments.length >= 4) {
-                userIdFromUrl = Long.parseLong(pathSegments[4]);
+            if (pathSegments.length >= 2) {
+                userIdFromUrl = Long.parseLong(pathSegments[2]);
             }
 
             if (userIdFromUrl != null && !userIdFromUrl.equals(userIdFromToken)) {

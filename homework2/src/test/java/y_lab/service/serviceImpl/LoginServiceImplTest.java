@@ -46,7 +46,7 @@ public class LoginServiceImplTest {
         connection = dataSource.getConnection();
 
         UserRepositoryImpl userRepository = new UserRepositoryImpl(dataSource);
-        loginService = new LoginServiceImpl(userRepository, dataSource);
+        loginService = new LoginServiceImpl(userRepository);
 
         CreateSchema.createSchema(connection);
     }
