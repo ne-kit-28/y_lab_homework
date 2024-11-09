@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: audit-logging-spring-boot-starter
+  datasource:
+    url: jdbc:postgresql://localhost:5433/y_lab
+    username: y_lab_user
+    password: Y_lab_password
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+appmap-starter:
+  env: MapProperties

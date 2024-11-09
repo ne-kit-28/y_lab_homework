@@ -1,5 +1,8 @@
 package y_lab.audit_logging_spring_boot_starter.aspect;
 
+import y_lab.audit_logging_spring_boot_starter.domain.AuditRecord;
+import y_lab.audit_logging_spring_boot_starter.service.AuditService;
+import y_lab.audit_logging_spring_boot_starter.util.UserContext;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.*;
@@ -7,10 +10,7 @@ import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
-import y_lab.audit_logging_spring_boot_starter.domain.AuditRecord;
-import y_lab.audit_logging_spring_boot_starter.service.AuditService;
 import y_lab.audit_logging_spring_boot_starter.service.AuditServiceImpl;
-import y_lab.audit_logging_spring_boot_starter.util.UserContext;
 
 import java.time.LocalDateTime;
 
@@ -42,7 +42,8 @@ public class AuditAndLoggingAspect {
     /**
      * Определяет точку соединения для выполнения методов в сервисном слое.
      */
-    @Pointcut("execution(public * y_lab.service.serviceImpl.*.*(..))")
+    //@Pointcut("execution(public * y_lab.service.serviceImpl.*.*(..))")
+    @Pointcut("@annotation(y_lab.audit_logging_spring_boot_starter.util.Auditable)")
     public void serviceLayerExecution() {}
 
     /**

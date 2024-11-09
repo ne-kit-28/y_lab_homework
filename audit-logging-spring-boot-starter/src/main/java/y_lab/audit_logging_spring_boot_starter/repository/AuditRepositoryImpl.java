@@ -1,11 +1,11 @@
 package y_lab.audit_logging_spring_boot_starter.repository;
 
+import y_lab.audit_logging_spring_boot_starter.domain.AuditRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jdbc.repository.query.Query;
 import org.springframework.stereotype.Repository;
-import y_lab.audit_logging_spring_boot_starter.domain.AuditRecord;
 
 import javax.sql.DataSource;
 import java.sql.Connection;

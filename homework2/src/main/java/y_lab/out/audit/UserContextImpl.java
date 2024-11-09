@@ -1,5 +1,6 @@
 package y_lab.out.audit;
 
+import y_lab.audit_logging_spring_boot_starter.util.UserContext;
 /**
  * Класс {@code UserContext} используется для хранения идентификатора текущего пользователя
  * в контексте потока. Он реализует механизм хранения идентификатора пользователя

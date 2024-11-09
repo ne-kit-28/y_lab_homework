@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import y_lab.audit_logging_spring_boot_starter.util.Auditable;
 import y_lab.domain.User;
 import y_lab.domain.enums.Role;
 import y_lab.dto.LoginResponseDto;
@@ -14,8 +15,6 @@ import y_lab.service.LoginService;
 import y_lab.util.EmailValidator;
 import y_lab.util.HashFunction;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Optional;
 import java.util.UUID;
@@ -32,6 +31,7 @@ public class LoginServiceImpl implements LoginService {
     }
 
     @Override
+    @Auditable
     public LoginResponseDto login(User user) {
 
         try {
