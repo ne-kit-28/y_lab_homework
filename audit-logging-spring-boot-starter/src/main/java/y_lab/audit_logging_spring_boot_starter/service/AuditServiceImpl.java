@@ -1,10 +1,12 @@
-package y_lab.out.audit;
+package y_lab.audit_logging_spring_boot_starter.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import y_lab.repository.repositoryImpl.AuditRepositoryImpl;
+import y_lab.audit_logging_spring_boot_starter.domain.AuditRecord;
+import y_lab.audit_logging_spring_boot_starter.repository.AuditRepository;
+import y_lab.audit_logging_spring_boot_starter.repository.AuditRepositoryImpl;
 
 import java.sql.SQLException;
 import java.util.ArrayList;

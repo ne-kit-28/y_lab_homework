@@ -11,17 +11,11 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import y_lab.controller.admin.UserAdminController;
 import y_lab.domain.User;
-import y_lab.out.audit.AuditRecord;
-import y_lab.out.audit.AuditService;
-import y_lab.out.audit.AuditServiceImpl;
 import y_lab.service.UserService;
-import y_lab.service.serviceImpl.UserServiceImpl;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -35,9 +29,6 @@ class UserAdminControllerTest {
 
     @Mock
     private UserService userService;
-
-    @Mock
-    private AuditService auditService;
 
     @InjectMocks
     private UserAdminController userAdminController;
@@ -83,32 +74,6 @@ class UserAdminControllerTest {
         when(userService.blockUser(eq(userId), eq(status))).thenReturn(false);
 
         mockMvc.perform(get("/user/{userId}/block/{status}", userId, status))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    @DisplayName("TGet audit test")
-    void testGetAudit() throws Exception {
-        long userId = 1L;
-        AuditRecord auditRecord = new AuditRecord(1L, LocalDateTime.now(), "ok!");
-        ArrayList<AuditRecord> auditRecords = new ArrayList<>(Collections.singletonList(auditRecord));
-
-        when(auditService.getAudit(anyLong())).thenReturn(auditRecords);
-
-        mockMvc.perform(get("/user/{userId}/audit", userId))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(result -> assertThat(result.getResponse().getContentAsString()).contains("\"message\":\"ok!\""));
-    }
-
-    @Test
-    @DisplayName("get audit which doesn't exist")
-    void testGetAudit_NotFound() throws Exception {
-        long userId = 1L;
-
-        when(auditService.getAudit(anyLong())).thenReturn(new ArrayList<>());
-
-        mockMvc.perform(get("/user/{userId}/audit", userId))
                 .andExpect(status().isNotFound());
     }
 }

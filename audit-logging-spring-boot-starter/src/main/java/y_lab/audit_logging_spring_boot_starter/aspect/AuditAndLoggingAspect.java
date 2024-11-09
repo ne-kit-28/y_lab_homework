@@ -1,4 +1,4 @@
-package y_lab.out.audit;
+package y_lab.audit_logging_spring_boot_starter.aspect;
 
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -7,6 +7,10 @@ import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
+import y_lab.audit_logging_spring_boot_starter.domain.AuditRecord;
+import y_lab.audit_logging_spring_boot_starter.service.AuditService;
+import y_lab.audit_logging_spring_boot_starter.service.AuditServiceImpl;
+import y_lab.audit_logging_spring_boot_starter.util.UserContext;
 
 import java.time.LocalDateTime;
 
@@ -22,6 +26,7 @@ import java.time.LocalDateTime;
 public class AuditAndLoggingAspect {
 
     private final AuditService auditService;
+    private final UserContext userContext;
 
     /**
      * Создает экземпляр {@code AuditAndLoggingAspect} с указанным сервисом аудита.
@@ -29,8 +34,9 @@ public class AuditAndLoggingAspect {
      * @param auditService сервис для обработки записей аудита.
      */
     @Autowired
-    public AuditAndLoggingAspect(@Lazy AuditServiceImpl auditService) {
+    public AuditAndLoggingAspect(@Lazy AuditServiceImpl auditService, UserContext userContext) {
         this.auditService = auditService;
+        this.userContext = userContext;
     }
 
     /**
@@ -46,7 +52,7 @@ public class AuditAndLoggingAspect {
      */
     @Before("serviceLayerExecution()")
     public void logAudit(JoinPoint joinPoint) {
-        Long userId = UserContext.getUserId();
+        Long userId = userContext.getUserId();
         if (userId == null)
             userId = -1L;
         String methodName = joinPoint.getSignature().getName();
@@ -67,7 +73,7 @@ public class AuditAndLoggingAspect {
         long start = System.currentTimeMillis();
         Object proceed = joinPoint.proceed();
         long executionTime = System.currentTimeMillis() - start;
-        Long userId = UserContext.getUserId();
+        Long userId = userContext.getUserId();
         if (userId == null)
             userId = -1L;
 
@@ -90,7 +96,7 @@ public class AuditAndLoggingAspect {
     @AfterReturning(pointcut = "serviceLayerExecution()", returning = "result")
     public void logAfterMethod(JoinPoint joinPoint, Object result) {
 
-        Long userId = UserContext.getUserId();
+        Long userId = userContext.getUserId();
         if (userId == null)
             userId = -1L;
         String message = "Метод завершен: " + joinPoint.getSignature().getName()
@@ -107,7 +113,7 @@ public class AuditAndLoggingAspect {
      */
     @AfterThrowing(pointcut = "serviceLayerExecution()", throwing = "exception")
     public void logException(Throwable exception) {
-        Long userId = UserContext.getUserId();
+        Long userId = userContext.getUserId();
         if (userId == null)
             userId = -1L;
         String message = "Исключение " + exception.getMessage();
