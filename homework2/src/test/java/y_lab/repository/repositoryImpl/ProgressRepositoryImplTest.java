@@ -1,17 +1,23 @@
 package y_lab.repository.repositoryImpl;
 
-import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import y_lab.domain.Progress;
+import y_lab.domain.User;
+import y_lab.domain.enums.Role;
+import y_lab.service.serviceImpl.CreateSchema;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -19,68 +25,43 @@ import java.util.ArrayList;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 
+@SpringBootTest
 @Testcontainers
 public class ProgressRepositoryImplTest {
 
     @Container
-    private PostgreSQLContainer<?> postgresContainer = new PostgreSQLContainer<>("postgres:15")
+    private static PostgreSQLContainer<?> postgresContainer = new PostgreSQLContainer<>("postgres:15")
             .withDatabaseName("testdb")
             .withUsername("testuser")
             .withPassword("testpass");
 
     private Connection connection;
-    private ProgressRepositoryImpl progressRepository;
-    private final HikariDataSource dataSource = new HikariDataSource();
+    private final ProgressRepositoryImpl progressRepository;
+    private final UserRepositoryImpl userRepository;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    public ProgressRepositoryImplTest(ProgressRepositoryImpl progressRepository, UserRepositoryImpl userRepository) {
+        this.progressRepository = progressRepository;
+        this.userRepository = userRepository;
+    }
+
+    @DynamicPropertySource
+    static void configureProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", postgresContainer::getJdbcUrl);
+        registry.add("spring.datasource.username", postgresContainer::getUsername);
+        registry.add("spring.datasource.password", postgresContainer::getPassword);
+    }
 
     @BeforeEach
     void setUp() throws SQLException {
-        dataSource.setJdbcUrl(postgresContainer.getJdbcUrl());
-        dataSource.setUsername(postgresContainer.getUsername());
-        dataSource.setPassword(postgresContainer.getPassword());
 
-        dataSource.setMaximumPoolSize(10);
-        dataSource.setMinimumIdle(3);
-        dataSource.setConnectionTimeout(30000);
-        dataSource.setIdleTimeout(600000);
-        dataSource.setMaxLifetime(1800000);
+        connection = jdbcTemplate.getDataSource().getConnection();
 
-        connection = dataSource.getConnection();
-
-        progressRepository = new ProgressRepositoryImpl(dataSource);
-
-        // Create sequences in the domain schema
-        connection.prepareStatement(
-                "CREATE SCHEMA IF NOT EXISTS domain;" +
-                        "CREATE SEQUENCE IF NOT EXISTS domain.progress_id_seq;" +
-                        "CREATE SEQUENCE IF NOT EXISTS domain.user_id_seq;" +
-                        "CREATE SEQUENCE IF NOT EXISTS domain.habit_id_seq;"
-        ).execute();
-
-        // Create tables in the domain schema
-        connection.prepareStatement(
-                "CREATE TABLE IF NOT EXISTS domain.users (" +
-                        "id BIGINT PRIMARY KEY DEFAULT nextval('domain.user_id_seq'), " +
-                        "username VARCHAR(255));" +
-
-                        "CREATE TABLE IF NOT EXISTS domain.habits (" +
-                        "id BIGINT PRIMARY KEY DEFAULT nextval('domain.habit_id_seq'), " +
-                        "user_id BIGINT, " +
-                        "name VARCHAR(64), " +
-                        "description VARCHAR(128), " +
-                        "frequency VARCHAR(16), " +
-                        "created_at VARCHAR(32), " +
-                        "FOREIGN KEY (user_id) REFERENCES domain.users(id));" +
-
-                        "CREATE TABLE IF NOT EXISTS domain.progresses (" +
-                        "id BIGINT PRIMARY KEY DEFAULT nextval('domain.progress_id_seq'), " +
-                        "user_id BIGINT, " +
-                        "habit_id BIGINT, " +
-                        "date VARCHAR(32), " +
-                        "FOREIGN KEY (habit_id) REFERENCES domain.habits(id), " +
-                        "FOREIGN KEY (user_id) REFERENCES domain.users(id));"
-        ).execute();
+        CreateSchema.createSchema(connection);
     }
 
     @AfterEach
@@ -93,7 +74,9 @@ public class ProgressRepositoryImplTest {
     @DisplayName("Сохранение прогресса")
     void testSaveAndFindById() throws SQLException {
 
-        connection.prepareStatement("INSERT INTO domain.users (username) VALUES ('testuser');").execute();
+        User user = new User(null, "user@example.com", "hash", "User", false, Role.REGULAR, null);
+        userRepository.save(user);
+
         connection.prepareStatement("INSERT INTO domain.habits (user_id, name, description, frequency, created_at) " +
                 "VALUES (1, 'Exercise', 'Daily Exercise', 'DAILY', '2024-10-19');").execute();
 
@@ -112,7 +95,9 @@ public class ProgressRepositoryImplTest {
     @DisplayName("Удаление всех выполнений")
     void testDeleteAllByHabitId() throws SQLException {
 
-        connection.prepareStatement("INSERT INTO domain.users (username) VALUES ('testuser');").execute();
+        User user = new User(null, "user@example.com", "hash", "User", false, Role.REGULAR, null);
+        userRepository.save(user);
+
         connection.prepareStatement("INSERT INTO domain.habits (user_id, name, description, frequency, created_at) " +
                 "VALUES (1, 'Exercise', 'Daily Exercise', 'DAILY', '2024-10-19');").execute();
 
@@ -131,9 +116,11 @@ public class ProgressRepositoryImplTest {
     @DisplayName("Получение списка выполнений по userId")
     void testFindByHabitId() throws SQLException {
 
-        connection.prepareStatement("INSERT INTO domain.users (username) VALUES ('testuser');").execute();
-        connection.prepareStatement("INSERT INTO domain.habits (user_id, name, description, frequency, created_at) " +
-                "VALUES (1, 'Exercise', 'Daily Exercise', 'DAILY', '2024-10-19');").execute();
+        User user = new User(null, "user@example.com", "hash", "User", false, Role.REGULAR, null);
+        userRepository.save(user);
+
+        connection.prepareStatement("INSERT INTO domain.habits (id, user_id, name, description, frequency, created_at) " +
+                "VALUES (1, 1, 'Exercise', 'Daily Exercise', 'DAILY', '2024-10-19');").execute();
 
         Progress progress1 = new Progress(null, 1L, 1L, LocalDate.now());
         Progress progress2 = new Progress(null, 1L, 1L, LocalDate.now().minusDays(1));

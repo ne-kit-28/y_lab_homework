@@ -1,30 +1,33 @@
 package y_lab.service.serviceImpl;
 
-import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import y_lab.domain.User;
 import y_lab.domain.enums.Role;
-import y_lab.repository.repositoryImpl.HabitRepositoryImpl;
-import y_lab.repository.repositoryImpl.ProgressRepositoryImpl;
 import y_lab.repository.repositoryImpl.UserRepositoryImpl;
 import y_lab.util.HashFunction;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 @Testcontainers
+@SpringBootTest
 class UserServiceImplTest {
 
     @Container
@@ -32,29 +35,32 @@ class UserServiceImplTest {
             .withDatabaseName("testdb")
             .withUsername("user")
             .withPassword("password");
-    private UserServiceImpl userService;
+
+    private final UserServiceImpl userService;
+    private final UserRepositoryImpl userRepository;
+    private final LoginServiceImpl loginService;
     private Connection connection;
-    private final HikariDataSource dataSource = new HikariDataSource();
+
+    @Autowired
+    UserServiceImplTest(UserServiceImpl userService, UserRepositoryImpl userRepository, LoginServiceImpl loginService) {
+        this.userService = userService;
+        this.userRepository = userRepository;
+        this.loginService = loginService;
+    }
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @DynamicPropertySource
+    static void configureProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", postgresContainer::getJdbcUrl);
+        registry.add("spring.datasource.username", postgresContainer::getUsername);
+        registry.add("spring.datasource.password", postgresContainer::getPassword);
+    }
 
     @BeforeEach
     public void setUp() throws SQLException {
-        dataSource.setJdbcUrl(postgresContainer.getJdbcUrl());
-        dataSource.setUsername(postgresContainer.getUsername());
-        dataSource.setPassword(postgresContainer.getPassword());
-
-        dataSource.setMaximumPoolSize(10);
-        dataSource.setMinimumIdle(3);
-        dataSource.setConnectionTimeout(30000);
-        dataSource.setIdleTimeout(600000);
-        dataSource.setMaxLifetime(1800000);
-
-        connection = dataSource.getConnection();
-
-        UserRepositoryImpl userRepository = new UserRepositoryImpl(dataSource);
-        HabitRepositoryImpl habitRepository = new HabitRepositoryImpl(dataSource);
-        ProgressRepositoryImpl progressRepository = new ProgressRepositoryImpl(dataSource);
-
-        userService = new UserServiceImpl(userRepository, habitRepository, progressRepository);
+        connection = Objects.requireNonNull(jdbcTemplate.getDataSource()).getConnection();
 
         CreateSchema.createSchema(connection);
 
@@ -108,7 +114,7 @@ class UserServiceImplTest {
     @DisplayName("Блокировка пользователя")
     void blockUser() {
 
-        userService.blockUser(1L, true);
+        userService.blockUser(4L, true);
 
         Optional<User> blockedUser = userService.getUser("test@example.com");
         assertThat(blockedUser).isPresent();
@@ -117,16 +123,15 @@ class UserServiceImplTest {
 
     @Test
     @DisplayName("Получает список всех пользователей")
-    void getUsers() throws SQLException {
-        LoginServiceImpl loginService = new LoginServiceImpl(new UserRepositoryImpl(dataSource));
+    void getUsers(){
         loginService.register(User.builder()
                 .name("User One")
-                .email("user1@example.com")
+                .email("us1@example.com")
                 .passwordHash(HashFunction.hashPassword("hashedPassword1"))
                 .build());
         loginService.register(User.builder()
                 .name("User Two")
-                .email("user2@example.com")
+                .email("us2@example.com")
                 .passwordHash(HashFunction.hashPassword("hashedPassword2"))
                 .build());
 
@@ -135,7 +140,7 @@ class UserServiceImplTest {
         assertThat(users.size()).isEqualTo(3);
 
         assertTrue(users.stream().anyMatch(u -> "test@example.com".equals(u.getEmail())));
-        assertTrue(users.stream().anyMatch(u -> "user1@example.com".equals(u.getEmail())));
-        assertTrue(users.stream().anyMatch(u -> "user2@example.com".equals(u.getEmail())));
+        assertTrue(users.stream().anyMatch(u -> "us1@example.com".equals(u.getEmail())));
+        assertTrue(users.stream().anyMatch(u -> "us2@example.com".equals(u.getEmail())));
     }
 }

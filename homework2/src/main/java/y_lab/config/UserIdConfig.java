@@ -7,6 +7,11 @@ import org.springframework.context.annotation.Primary;
 import y_lab.audit_logging_spring_boot_starter.util.UserContext;
 import y_lab.out.audit.UserContextImpl;
 
+/**
+ * Конфиг передающий в стартер реализацию получения userId
+ * для аудита действий пользователей
+ */
+
 @Configuration
 public class UserIdConfig {
     @Bean

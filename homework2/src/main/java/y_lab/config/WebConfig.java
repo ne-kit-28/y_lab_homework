@@ -1,14 +1,17 @@
 package y_lab.config;
 
-import org.springframework.boot.autoconfigure.web.servlet.DispatcherServletRegistrationBean;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
 import org.springframework.web.servlet.DispatcherServlet;
 
-
+/**
+ * Конфиг настраивающий дополнительный админский Диспатчер сервлет,
+ * (помимо дефолтного поставляемого Spring boot)
+ * для удобного использования фильтра, который разрешает доступ к информации
+ * на основе роли пользователя
+ */
 
 @Configuration
 public class WebConfig{
