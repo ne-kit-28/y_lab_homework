@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import y_lab.audit_logging_spring_boot_starter.util.Auditable;
 import y_lab.domain.User;
 import y_lab.domain.enums.Role;
 import y_lab.repository.HabitRepository;
@@ -130,6 +131,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Auditable
     public Optional<User> getUser(String email) {
 
         Optional<User> user = Optional.empty();

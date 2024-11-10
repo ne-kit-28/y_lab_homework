@@ -47,7 +47,7 @@ class UserAdminControllerTest {
         ArrayList<User> users = new ArrayList<>(Collections.singletonList(user));
         when(userService.getUsers()).thenReturn(users);
 
-        mockMvc.perform(get("/user/all"))
+        mockMvc.perform(get("/admin/user/all"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(result -> assertThat(result.getResponse().getContentAsString()).contains("\"id\":4"));
@@ -61,7 +61,7 @@ class UserAdminControllerTest {
 
         when(userService.blockUser(eq(userId), eq(status))).thenReturn(true);
 
-        mockMvc.perform(get("/user/{userId}/block/{status}", userId, status))
+        mockMvc.perform(get("/admin/user/{userId}/block/{status}", userId, status))
                 .andExpect(status().isOk());
     }
 
@@ -73,7 +73,7 @@ class UserAdminControllerTest {
 
         when(userService.blockUser(eq(userId), eq(status))).thenReturn(false);
 
-        mockMvc.perform(get("/user/{userId}/block/{status}", userId, status))
+        mockMvc.perform(get("/admin/user/{userId}/block/{status}", userId, status))
                 .andExpect(status().isNotFound());
     }
 }

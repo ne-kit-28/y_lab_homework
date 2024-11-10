@@ -18,11 +18,11 @@ public class EnvPostProcessor implements EnvironmentPostProcessor {
 
     @Override
     public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
-        var resource = new ClassPathResource("application.yml"); // определяем application.yml как локальный ресурс
+        var resource = new ClassPathResource("application.yaml"); // определяем application.yml как локальный ресурс
         PropertySource<?> propertySource = null;
         try {
             // и просим Yaml...Loader зачитать настройки из файла
-            propertySource = propertySourceLoader.load("appmap-starter", resource).get(0);
+            propertySource = propertySourceLoader.load("log-package-starter", resource).get(0);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
