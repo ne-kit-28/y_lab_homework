@@ -1,4 +1,4 @@
-package y_lab.audit_logging_spring_boot_starter.util;
+package y_lab.audit_logging_spring_boot_starter.annotation;
 
 import org.springframework.context.annotation.Import;
 import y_lab.audit_logging_spring_boot_starter.config.LoggingConfig;

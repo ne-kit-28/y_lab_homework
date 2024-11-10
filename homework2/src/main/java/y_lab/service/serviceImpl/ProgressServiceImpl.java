@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import y_lab.audit_logging_spring_boot_starter.annotation.Auditable;
 import y_lab.domain.Habit;
 import y_lab.domain.Progress;
 import y_lab.domain.enums.Frequency;
@@ -14,9 +15,6 @@ import y_lab.repository.repositoryImpl.HabitRepositoryImpl;
 import y_lab.repository.repositoryImpl.ProgressRepositoryImpl;
 import y_lab.service.ProgressService;
 
-import javax.sql.DataSource;
-import java.beans.Transient;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.Period;
@@ -53,6 +51,7 @@ public class ProgressServiceImpl implements ProgressService {
 
     @Override
     @Transactional
+    @Auditable
     public boolean createProgress(Long habitId) {
         try {
             Optional<Habit> habit = habitRepository.findById(habitId);
@@ -75,6 +74,7 @@ public class ProgressServiceImpl implements ProgressService {
     }
 
     @Override
+    @Auditable
     public String generateProgressStatistics(Long habitId, String period) {
 
         String returnStr = "";
@@ -119,6 +119,7 @@ public class ProgressServiceImpl implements ProgressService {
     }
 
     @Override
+    @Auditable
     public String calculateStreak(Long habitId) {
 
         String returnStr = "";
@@ -166,6 +167,7 @@ public class ProgressServiceImpl implements ProgressService {
     }
 
     @Override
+    @Auditable
     public String generateReport(Long habitId, String period) {
 
         String statistic = this.generateProgressStatistics(habitId, period);

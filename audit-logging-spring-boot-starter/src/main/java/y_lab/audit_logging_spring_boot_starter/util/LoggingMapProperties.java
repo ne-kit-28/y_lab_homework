@@ -6,6 +6,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
+/**
+ * Чтение строки, в которой указаны пкаеты,
+ * к которым необходимо применить логирование
+ */
+
 @Setter
 @Getter
 @Component

@@ -1,15 +1,12 @@
 package y_lab.audit_logging_spring_boot_starter.aspect;
 
-import jakarta.annotation.PostConstruct;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.*;
 import org.aspectj.lang.reflect.MethodSignature;
-import org.aspectj.weaver.tools.PointcutExpression;
-import org.aspectj.weaver.tools.PointcutParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.stereotype.Component;
 import y_lab.audit_logging_spring_boot_starter.util.LoggingMapProperties;
 
 /**
@@ -20,22 +17,16 @@ import y_lab.audit_logging_spring_boot_starter.util.LoggingMapProperties;
  * с указанием времени выполнения и имени метода.
  */
 @Aspect
-//@Component
 public class LoggingAspect {
 
     private final LoggingMapProperties properties;
+    private static final Logger logger = LoggerFactory.getLogger(LoggingAspect.class);
+
 
     @Autowired
     public LoggingAspect(LoggingMapProperties properties) {
         this.properties = properties;
     }
-
-//    @PostConstruct
-//    public void init() {
-//        PointcutParser parser = PointcutParser
-//                .getPointcutParserSupportingAllPrimitivesAndUsingContextClassloaderForResolution();
-//        pointcutExpression = parser.parsePointcutExpression("execution(* " + properties.getEnv() + "..*(..))");
-//    }
 
     @Pointcut("execution(* y_lab..*(..)) && !execution(* y_lab.audit_logging_spring_boot_starter..*(..))")
     public void serviceLayerExecution() {}
@@ -59,7 +50,7 @@ public class LoggingAspect {
             String methodName = methodSignature.getMethod().getName();
             String message = "Метод " + methodName + " выполнен за " + executionTime + " мс";
 
-            System.out.println(message);
+            logger.info(message);
             return proceed;
         }
         return joinPoint.proceed();
@@ -77,7 +68,7 @@ public class LoggingAspect {
         if (joinPoint.getTarget().getClass().getName().contains(properties.getEnv())) {
             String message = "Метод завершен: " + joinPoint.getSignature().getName()
                     + ", возвращено значение: " + result;
-            System.out.println(message);
+            logger.info(message);
         }
     }
 
@@ -93,7 +84,7 @@ public class LoggingAspect {
         if (joinPoint.getTarget().getClass().getName().contains(properties.getEnv())) {
             String message = "Метод: " + joinPoint.getSignature().getName()
                     + " выбросил сключение " + exception.getMessage();
-            System.out.println(message);
+            logger.info(message);
         }
     }
 }

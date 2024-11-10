@@ -12,4 +12,4 @@ spring:
     enabled: true
     change-log: classpath:db/changelog/db.changelog-master.yaml
 log-package-starter:
-  env: y_lab.service
+  env: y_lab

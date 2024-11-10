@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import y_lab.audit_logging_spring_boot_starter.util.Auditable;
+import y_lab.audit_logging_spring_boot_starter.annotation.Auditable;
 import y_lab.domain.User;
 import y_lab.domain.enums.Role;
 import y_lab.repository.HabitRepository;
@@ -16,10 +16,7 @@ import y_lab.repository.repositoryImpl.ProgressRepositoryImpl;
 import y_lab.repository.repositoryImpl.UserRepositoryImpl;
 import y_lab.service.UserService;
 import y_lab.util.EmailValidator;
-import y_lab.util.HashFunction;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
@@ -63,6 +60,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Auditable
     public boolean editUser(Long id, User user) {
 
         boolean edit = false;
@@ -88,6 +86,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Auditable
     public boolean blockUser(Long id, boolean block) {
 
         boolean edit = false;
@@ -113,6 +112,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Auditable
     public boolean deleteUser(Long id) {
 
         boolean edit = false;
@@ -146,6 +146,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Auditable
     public ArrayList<User> getUsers() {
 
         ArrayList<User> users = new ArrayList<>();

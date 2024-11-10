@@ -1,4 +1,4 @@
-package y_lab.service.serviceImplNotAudit;
+package y_lab.service.serviceImpl;
 
 import org.springframework.stereotype.Service;
 import y_lab.service.NotificationService;

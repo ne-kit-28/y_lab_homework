@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 /**
  * Аспект {@code AuditAspect} отвечает за аудит
  * действий пользователя.
- *
+ * <p>
  * Этот аспект перехватывает вызовы методов и создает записи аудита
  * с указанием идентификатора пользователя, времени выполнения и имени метода.
  */
@@ -40,8 +40,7 @@ public class AuditAspect {
     /**
      * Определяет точку соединения для выполнения методов в сервисном слое.
      */
-    //@Pointcut("execution(public * y_lab.service.serviceImpl.*.*(..))")
-    @Pointcut("@annotation(y_lab.audit_logging_spring_boot_starter.util.Auditable)")
+    @Pointcut("@annotation(y_lab.audit_logging_spring_boot_starter.annotation.Auditable)")
     public void serviceLayerExecution() {}
 
     /**

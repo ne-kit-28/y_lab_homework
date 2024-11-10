@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import y_lab.audit_logging_spring_boot_starter.annotation.Auditable;
 import y_lab.domain.Habit;
 import y_lab.domain.enums.Frequency;
 import y_lab.repository.HabitRepository;
@@ -36,6 +37,7 @@ public class HabitServiceImpl implements HabitService {
     }
 
     @Override
+    @Auditable
     public Long createHabit(Long userId, Habit habit) {
 
         Long habitId = -1L;
@@ -59,6 +61,7 @@ public class HabitServiceImpl implements HabitService {
     }
 
     @Override
+    @Auditable
     public boolean deleteHabit(Long id) {
 
         boolean del = false;
@@ -75,6 +78,7 @@ public class HabitServiceImpl implements HabitService {
     }
 
     @Override
+    @Auditable
     public ArrayList<Habit> getHabits(Long userId, String filter) {
 
         ArrayList<Habit> habits = new ArrayList<>();
@@ -113,6 +117,7 @@ public class HabitServiceImpl implements HabitService {
     }
 
     @Override
+    @Auditable
     public Optional<Habit> getHabit(String habitName, Long userId) {
 
         try {
@@ -133,6 +138,7 @@ public class HabitServiceImpl implements HabitService {
     }
 
     @Override
+    @Auditable
     public Optional<Habit> getHabit(Long habitId) {
         try {
             Optional<Habit> habit = habitRepository.findById(habitId);
@@ -152,6 +158,7 @@ public class HabitServiceImpl implements HabitService {
     }
 
     @Override
+    @Auditable
     public boolean updateHabit(Long id, Habit newHabit) {
 
         boolean upd = false;

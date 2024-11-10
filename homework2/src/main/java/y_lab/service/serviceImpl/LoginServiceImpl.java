@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import y_lab.audit_logging_spring_boot_starter.util.Auditable;
+import y_lab.audit_logging_spring_boot_starter.annotation.Auditable;
 import y_lab.domain.User;
 import y_lab.domain.enums.Role;
 import y_lab.dto.LoginResponseDto;
@@ -69,6 +69,7 @@ public class LoginServiceImpl implements LoginService {
     }
 
     @Override
+    @Auditable
     public LoginResponseDto resetPassword(User user) {
 
         String password = user.getPasswordHash();
@@ -102,6 +103,7 @@ public class LoginServiceImpl implements LoginService {
     }
 
     @Override
+    @Auditable
     public boolean requestPasswordReset(String email) {
 
         boolean res = false;
@@ -129,6 +131,7 @@ public class LoginServiceImpl implements LoginService {
     }
 
     @Override
+    @Auditable
     public LoginResponseDto register(User user) {
 
         Role role;

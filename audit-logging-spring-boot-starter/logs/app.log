@@ -1,0 +1,24 @@
+2024-11-10 15:38:20 INFO  [main] y.a.AuditLoggingSpringBootStarterApplication - Starting AuditLoggingSpringBootStarterApplication using Java 17.0.12 with PID 18328 (D:\Documents\Java\Y_LAB\habits_new\y_lab_homework\audit-logging-spring-boot-starter\target\classes started by Tuf 15 in D:\Documents\Java\Y_LAB\habits_new\y_lab_homework\audit-logging-spring-boot-starter)
+2024-11-10 15:38:20 INFO  [main] y.a.AuditLoggingSpringBootStarterApplication - No active profile set, falling back to 1 default profile: "default"
+2024-11-10 15:38:20 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JDBC repositories in DEFAULT mode.
+2024-11-10 15:38:21 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 9 ms. Found 0 JDBC repository interfaces.
+2024-11-10 15:38:21 WARN  [main] o.s.c.a.AnnotationConfigApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'auditRepositoryImpl' defined in file [D:\Documents\Java\Y_LAB\habits_new\y_lab_homework\audit-logging-spring-boot-starter\target\classes\y_lab\audit_logging_spring_boot_starter\repository\AuditRepositoryImpl.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'dataSource' defined in class path resource [org/springframework/boot/autoconfigure/jdbc/DataSourceConfiguration$Hikari.class]: Failed to instantiate [com.zaxxer.hikari.HikariDataSource]: Factory method 'dataSource' threw exception with message: Failed to determine a suitable driver class
+2024-11-10 15:38:21 ERROR [main] o.s.b.d.LoggingFailureAnalysisReporter - 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Failed to configure a DataSource: 'url' attribute is not specified and no embedded datasource could be configured.
+
+Reason: Failed to determine a suitable driver class
+
+
+Action:
+
+Consider the following:
+	If you want an embedded database (H2, HSQL or Derby), please put it on the classpath.
+	If you have database settings to be loaded from a particular profile you may need to activate it (no profiles are currently active).
+
