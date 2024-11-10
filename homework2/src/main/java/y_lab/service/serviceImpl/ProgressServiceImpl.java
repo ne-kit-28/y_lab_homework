@@ -2,6 +2,8 @@ package y_lab.service.serviceImpl;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import y_lab.domain.Habit;
 import y_lab.domain.Progress;
 import y_lab.domain.enums.Frequency;
@@ -11,6 +13,7 @@ import y_lab.repository.repositoryImpl.HabitRepositoryImpl;
 import y_lab.repository.repositoryImpl.ProgressRepositoryImpl;
 import y_lab.service.ProgressService;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -21,19 +24,21 @@ import java.util.Comparator;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
+@Service
 public class ProgressServiceImpl implements ProgressService {
     private final HabitRepository habitRepository;
     private final ProgressRepository progressRepository;
     private final Connection connection;
     private static final Logger logger = LoggerFactory.getLogger(ProgressServiceImpl.class);
 
+    @Autowired
     public ProgressServiceImpl(
             HabitRepositoryImpl habitRepository
             , ProgressRepositoryImpl progressRepository
-            , Connection connection) {
+            , DataSource dataSource) throws SQLException {
         this.habitRepository = habitRepository;
         this.progressRepository = progressRepository;
-        this.connection = connection;
+        this.connection = dataSource.getConnection();
     }
 
     private LocalDate calculateStartDate(String period) {
@@ -111,7 +116,6 @@ public class ProgressServiceImpl implements ProgressService {
                     .filter(progress -> progress.getDate().isAfter(startDate))
                     .toList());
 
-            // Generate statistics
             long completedDays = filteredProgresses.size();
 
             returnStr += "Habit: " + habit.getName();
@@ -148,7 +152,6 @@ public class ProgressServiceImpl implements ProgressService {
                     .sorted(Comparator.comparing(Progress::getDate))
                     .toList());
 
-            // Calculate current streak
             int streak = 1;
             int maxStreak = 1;
             for (int i = 1; i < progressList.size(); ++i) {
@@ -177,11 +180,10 @@ public class ProgressServiceImpl implements ProgressService {
     }
 
     @Override
-    public String generateReport(Long habitId, String period) { // String {"day", "week", "month"}
-        // Generate progress statistics
+    public String generateReport(Long habitId, String period) {
+
         String statistic = this.generateProgressStatistics(habitId, period);
 
-        // Calculate streak
         String streak = this.calculateStreak(habitId);
 
         System.out.println(statistic + '\n' + streak);

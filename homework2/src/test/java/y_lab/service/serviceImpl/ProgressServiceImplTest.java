@@ -1,5 +1,6 @@
 package y_lab.service.serviceImpl;
 
+import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,12 +20,11 @@ import y_lab.repository.repositoryImpl.UserRepositoryImpl;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers
 public class ProgressServiceImplTest {
@@ -38,26 +38,32 @@ public class ProgressServiceImplTest {
     private Connection connection;
     private ProgressRepositoryImpl progressRepository;
     private ProgressServiceImpl progressService;
+    private final HikariDataSource dataSource = new HikariDataSource();
 
     @BeforeEach
     public void setUp() throws SQLException {
-        connection = DriverManager.getConnection(
-                postgresContainer.getJdbcUrl(),
-                postgresContainer.getUsername(),
-                postgresContainer.getPassword()
-        );
+        dataSource.setJdbcUrl(postgresContainer.getJdbcUrl());
+        dataSource.setUsername(postgresContainer.getUsername());
+        dataSource.setPassword(postgresContainer.getPassword());
+
+        dataSource.setMaximumPoolSize(10);
+        dataSource.setMinimumIdle(3);
+        dataSource.setConnectionTimeout(30000);
+        dataSource.setIdleTimeout(600000);
+        dataSource.setMaxLifetime(1800000);
+
+        connection = dataSource.getConnection();
 
         CreateSchema.createSchema(connection);
 
-        UserRepositoryImpl userRepository = new UserRepositoryImpl(connection);
-        userRepository.save(new User("test@example.com", "hashedPassword", "TestUser",false, Role.REGULAR));
+        UserRepositoryImpl userRepository = new UserRepositoryImpl(dataSource);
+        userRepository.save(new User("test@example.com", "hashedPassword", "TestUser", false, Role.REGULAR));
 
-        HabitRepositoryImpl habitRepository = new HabitRepositoryImpl(connection);
+        HabitRepositoryImpl habitRepository = new HabitRepositoryImpl(dataSource);
         habitRepository.save(new Habit(null, 1L, "sleep", "a lot", Frequency.DAILY, LocalDate.now()));
 
-
-        progressRepository = new ProgressRepositoryImpl(connection);
-        progressService = new ProgressServiceImpl(habitRepository, progressRepository, connection);
+        progressRepository = new ProgressRepositoryImpl(dataSource);
+        progressService = new ProgressServiceImpl(habitRepository, progressRepository, dataSource);
     }
 
     @AfterEach
@@ -82,9 +88,9 @@ public class ProgressServiceImplTest {
         progressService.createProgress(habitId);
 
         Optional<Progress> progress = progressRepository.findByHabitId(habitId).stream().findFirst();
-        assertTrue(progress.isPresent());
-        assertEquals(habitId, progress.get().getHabitId());
-        assertEquals(LocalDate.now(), progress.get().getDate());
+        assertThat(progress).isPresent();
+        assertThat(progress.get().getHabitId()).isEqualTo(habitId);
+        assertThat(progress.get().getDate()).isEqualTo(LocalDate.now());
     }
 
     @Test
@@ -104,8 +110,8 @@ public class ProgressServiceImplTest {
         String output = outputStream.toString();
         System.setOut(originalOut);
 
-        assertTrue(output.contains("Completed: 2"));
-        assertTrue(output.contains("Completion rate: 100%"));
+        assertThat(output).contains("Completed: 2");
+        assertThat(output).contains("Completion rate: 100%");
     }
 
     @Test
@@ -126,8 +132,8 @@ public class ProgressServiceImplTest {
         String output = outputStream.toString();
         System.setOut(originalOut);
 
-        assertTrue(output.contains("Current streak: 2"));
-        assertTrue(output.contains("Max streak: 2"));
+        assertThat(output).contains("Current streak: 2");
+        assertThat(output).contains("Max streak: 2");
     }
 
     @Test
@@ -146,7 +152,7 @@ public class ProgressServiceImplTest {
         String output = outputStream.toString();
         System.setOut(originalOut);
 
-        assertFalse(output.contains("Sql error"));
-        assertFalse(output.contains("no habit"));
+        assertThat(output).doesNotContain("Sql error");
+        assertThat(output).doesNotContain("no habit");
     }
 }

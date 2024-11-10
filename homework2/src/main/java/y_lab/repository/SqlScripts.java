@@ -75,4 +75,12 @@ public class SqlScripts {
     public static final String PROGRESS_FIND_BY_HABIT_ID =
             "SELECT * FROM domain.progresses " +
                     "WHERE habit_id = ?";
+
+    public static final String AUDIT_SAVE =
+            "INSERT INTO service.audit (user_id, date, message) " +
+                    "VALUES (?, ?, ?)";
+
+    public static final String AUDIT_FIND_AUDIT_BY_USER_ID =
+            "SELECT * FROM service.audit " +
+                    "WHERE user_id = ?";
 }

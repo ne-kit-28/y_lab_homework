@@ -1,144 +1,172 @@
 package y_lab.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import y_lab.controller.api.LoginController;
 import y_lab.dto.LoginInDto;
 import y_lab.dto.LoginResponseDto;
+import y_lab.dto.LoginResetDto;
 import y_lab.dto.LoginUpDto;
 import y_lab.service.LoginService;
+import y_lab.service.serviceImpl.LoginServiceImpl;
+import y_lab.util.HashFunction;
 
-
-import java.io.BufferedReader;
-import java.io.PrintWriter;
-import java.io.StringReader;
-
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 public class LoginControllerTest {
-
-    @Mock
-    private LoginService loginService;
 
     @InjectMocks
     private LoginController loginController;
 
     @Mock
-    private HttpServletRequest request;
+    private LoginService loginService;
 
-    @Mock
-    private HttpServletResponse response;
-
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private MockMvc mockMvc;
+    private ObjectMapper objectMapper;
 
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
+        mockMvc = MockMvcBuilders.standaloneSetup(loginController).build();
+        objectMapper = new ObjectMapper();
     }
 
     @Test
-    @DisplayName("Успешный вход")
-    void testSignInSuccess() throws Exception {
-        LoginInDto loginInDto = new LoginInDto("user@example.com", "password123");
-        LoginResponseDto loginResponseDto = new LoginResponseDto(1L, "user@example.com", "password123", "regular", "");
+    @DisplayName("signIn with correct loginInDto")
+    public void signInSuccessful() throws Exception {
 
-        when(request.getServletPath()).thenReturn("/api/login/signIn");
-        when(request.getReader()).thenReturn(new BufferedReader(new StringReader(objectMapper.writeValueAsString(loginInDto))));
-        when(loginService.login(any())).thenReturn(loginResponseDto);
+        LoginInDto loginInDto = new LoginInDto("user@example.com", "1234567");
+        LoginResponseDto responseDto = new LoginResponseDto(1L, "user@example.com", "password","ADMINISTRATOR", "Successful!");
 
-        PrintWriter writer = mock(PrintWriter.class);
-        when(response.getWriter()).thenReturn(writer);
+        when(loginService.login(any())).thenReturn(responseDto);
 
-        loginController.doPost(request, response);
-
-        verify(response).setStatus(HttpServletResponse.SC_OK);
-        verify(writer).print(1L);
+        mockMvc.perform(post("/login/signIn")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginInDto)))
+                .andExpect(status().isOk())
+                .andExpect(header().exists("Authorization"))
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.role").value("ADMINISTRATOR"));
     }
 
     @Test
-    @DisplayName("Невалидные данные для входа")
-    void testSignInNotValid() throws Exception {
-        LoginInDto loginInDto = new LoginInDto("userexample.com", "password123");
-
-        when(request.getServletPath()).thenReturn("/api/login/signIn");
-        when(request.getReader()).thenReturn(new BufferedReader(new StringReader(objectMapper.writeValueAsString(loginInDto))));
-
-        PrintWriter writer = mock(PrintWriter.class);
-        when(response.getWriter()).thenReturn(writer);
-
-        loginController.doPost(request, response);
-
-        verify(response).setStatus(HttpServletResponse.SC_BAD_REQUEST);
-    }
-
-    @Test
-    @DisplayName("Неправильные данные для входа")
-    void testSignInFailure() throws Exception {
+    @DisplayName("signIn with incorrect password")
+    public void signInLoginFails() throws Exception {
         LoginInDto loginInDto = new LoginInDto("user@example.com", "wrongpassword");
-        LoginResponseDto loginResponseDto = new LoginResponseDto(-1L, "user@example.com", "", "UNAUTHORIZED", "Incorrect password!");
+        LoginResponseDto responseDto = new LoginResponseDto(-1L, "user@example.com", "","UNAUTHORIZED","Incorrect password!");
 
-        when(request.getServletPath()).thenReturn("/api/login/signIn");
-        when(request.getReader()).thenReturn(new BufferedReader(new StringReader(objectMapper.writeValueAsString(loginInDto))));
-        when(loginService.login(any())).thenReturn(loginResponseDto);
+        when(loginService.login(any())).thenReturn(responseDto);
 
-        loginController.doPost(request, response);
-
-        verify(response).sendError(HttpServletResponse.SC_CONFLICT, loginResponseDto.message());
+        mockMvc.perform(post("/login/signIn")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginInDto)))
+                .andExpect(status().isConflict())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.id").value(-1L));
     }
 
     @Test
-    @DisplayName("Успешная регистрация")
-    void testSignUpSuccess() throws Exception {
-        LoginUpDto loginUpDto = new LoginUpDto("user1","user@example.com", "password123");
-        LoginResponseDto loginResponseDto = new LoginResponseDto(1L, "user@example.com", "password123", "regular", "Registration successful!");
+    @DisplayName("SignUp with correct signUpDto")
+    public void signUpSuccessful() throws Exception {
 
-        when(request.getServletPath()).thenReturn("/api/login/signUp");
-        when(request.getReader()).thenReturn(new BufferedReader(new StringReader(objectMapper.writeValueAsString(loginUpDto))));
-        when(loginService.register(any())).thenReturn(loginResponseDto);
+        LoginUpDto loginUpDto = new LoginUpDto("User","newuser@example.com", "password");
+        LoginResponseDto responseDto = new LoginResponseDto(2L, "newuser@example.com", HashFunction.hashPassword("password"),"UNAUTHORIZED","Incorrect password!");
 
-        PrintWriter writer = mock(PrintWriter.class);
-        when(response.getWriter()).thenReturn(writer);
+        when(loginService.register(any())).thenReturn(responseDto);
 
-        loginController.doPost(request, response);
-
-        verify(response).setStatus(HttpServletResponse.SC_CREATED);
-        verify(writer).print(objectMapper.writeValueAsString(loginResponseDto));
+        mockMvc.perform(post("/login/signUp")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginUpDto)))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.id").value(2L))
+                .andExpect(jsonPath("$.role").value("UNAUTHORIZED"));
     }
 
     @Test
-    @DisplayName("Регистрация с невалидными данными")
-    void testSignUpNotValid() throws Exception {
-        LoginUpDto loginUpDto = new LoginUpDto("user1","user@example.com", "pas");
+    @DisplayName("signUp with incorrect data")
+    public void signUpFails() throws Exception {
 
-        when(request.getServletPath()).thenReturn("/api/login/signUp");
-        when(request.getReader()).thenReturn(new BufferedReader(new StringReader(objectMapper.writeValueAsString(loginUpDto))));
+        LoginUpDto loginUpDto = new LoginUpDto("user","existinguser@example.com", "password");
+        LoginResponseDto responseDto = new LoginResponseDto(-1L, "existinguser@example.com","","UNAUTHORIZED", "error");
 
-        PrintWriter writer = mock(PrintWriter.class);
-        when(response.getWriter()).thenReturn(writer);
+        when(loginService.register(any())).thenReturn(responseDto);
 
-        loginController.doPost(request, response);
-
-        verify(response).setStatus(HttpServletResponse.SC_BAD_REQUEST);
+        mockMvc.perform(post("/login/signUp")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginUpDto)))
+                .andExpect(status().isConflict())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.id").value(-1L));
     }
 
     @Test
-    @DisplayName("Регистрация с существующим email")
-    void testSignUpFailure() throws Exception {
-        LoginUpDto loginUpDto = new LoginUpDto("user2","user@example.com", "password123");
-        LoginResponseDto loginResponseDto = new LoginResponseDto(-1L, "user@example.com", "", "UNAUTHORIZED", "User with this email already exists!");
+    @DisplayName("Request reset password")
+    public void requestOk() throws Exception {
 
-        when(request.getServletPath()).thenReturn("/api/login/signUp");
-        when(request.getReader()).thenReturn(new BufferedReader(new StringReader(objectMapper.writeValueAsString(loginUpDto))));
-        when(loginService.register(any())).thenReturn(loginResponseDto);
+        String email = "user@example.com";
+        when(loginService.requestPasswordReset(email)).thenReturn(true);
 
-        loginController.doPost(request, response);
+        mockMvc.perform(post("/login/requestReset/{email}", email))
+                .andExpect(status().isCreated());
+    }
 
-        verify(response).sendError(HttpServletResponse.SC_CONFLICT, loginResponseDto.message());
+    @Test
+    @DisplayName("request with invalid email")
+    public void requestConflict() throws Exception {
+
+        String email = "invalid@example.com";
+        when(loginService.requestPasswordReset(email)).thenReturn(false);
+
+        mockMvc.perform(post("/login/requestReset/{email}", email))
+                .andExpect(status().isConflict())
+                .andExpect(header().string("Error-Message", "Error with email"));
+    }
+
+    @Test
+    @DisplayName("Reset with correct data")
+    public void resetSuccessful() throws Exception {
+
+        LoginResetDto resetDto = new LoginResetDto("user@example.com", "newpassword", "token123345");
+        LoginResponseDto responseDto = new LoginResponseDto(1L, "user@example.com", "","UNAUTHORIZED","ok");
+
+        when(loginService.resetPassword(any())).thenReturn(responseDto);
+
+        mockMvc.perform(post("/login/reset")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(resetDto)))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.role").value("UNAUTHORIZED"));
+    }
+
+    @Test
+    @DisplayName("reset fails")
+    public void resetConflict() throws Exception {
+
+        LoginResetDto resetDto = new LoginResetDto("user@example.com", "wrongpassword", "token123456");
+        LoginResponseDto responseDto = new LoginResponseDto(-1L, "user@example.com", "","UNAUTHORIZED","Incorrect password!");
+
+        when(loginService.resetPassword(any())).thenReturn(responseDto);
+
+        mockMvc.perform(post("/login/reset")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(resetDto)))
+                .andExpect(status().isConflict())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.id").value(-1L));
     }
 }

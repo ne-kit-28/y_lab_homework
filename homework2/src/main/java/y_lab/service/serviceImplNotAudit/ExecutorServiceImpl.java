@@ -1,7 +1,9 @@
-package y_lab.service.serviceImpl;
+package y_lab.service.serviceImplNotAudit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import y_lab.domain.User;
 import y_lab.domain.enums.Frequency;
 import y_lab.domain.Habit;
@@ -20,6 +22,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+@Service
 public class ExecutorServiceImpl implements ExecutorService, AutoCloseable {
 
     private final HabitRepository habitRepository;
@@ -28,7 +31,8 @@ public class ExecutorServiceImpl implements ExecutorService, AutoCloseable {
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private static final Logger logger = LoggerFactory.getLogger(ExecutorServiceImpl.class);
 
-    public ExecutorServiceImpl(HabitRepositoryImpl habitRepository, UserRepositoryImpl userRepository, NotificationService notificationService) {
+    @Autowired
+    public ExecutorServiceImpl(HabitRepositoryImpl habitRepository, UserRepositoryImpl userRepository, NotificationServiceImpl notificationService) {
         this.habitRepository = habitRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;

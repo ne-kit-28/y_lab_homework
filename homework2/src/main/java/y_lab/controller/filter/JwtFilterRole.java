@@ -6,11 +6,11 @@ import jakarta.servlet.FilterConfig;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
-import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import y_lab.domain.enums.Role;
+import y_lab.out.audit.UserContext;
 import y_lab.util.JwtUtil;
 
 /**
@@ -28,9 +28,6 @@ import y_lab.util.JwtUtil;
  * required role, the filter will return an HTTP error response.</p>
  */
 
-@WebFilter(urlPatterns = {
-        "/api/user/all"
-})
 public class JwtFilterRole implements Filter {
 
     @Override
@@ -51,7 +48,7 @@ public class JwtFilterRole implements Filter {
 
         try {
             String roleFromToken = JwtUtil.getRole(token);
-            System.out.println(roleFromToken);
+            long userIdFromToken = JwtUtil.getUserId(token);
 
             String roleParam = Role.ADMINISTRATOR.getValue();
 
@@ -61,7 +58,12 @@ public class JwtFilterRole implements Filter {
                 return;
             }
 
-            chain.doFilter(request, response);
+            UserContext.setUserId(userIdFromToken);
+            try {
+                chain.doFilter(request, response);
+            } finally {
+                UserContext.clear();
+            }
 
         } catch (Exception e) {
             resp.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid token");

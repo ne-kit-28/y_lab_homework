@@ -1,108 +1,150 @@
 package y_lab.controller;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import y_lab.controller.api.HabitController;
 import y_lab.domain.Habit;
 import y_lab.domain.enums.Frequency;
 import y_lab.dto.HabitRequestDto;
+import y_lab.dto.HabitResponseDto;
+import y_lab.mapper.HabitMapper;
 import y_lab.service.HabitService;
+import y_lab.service.serviceImpl.HabitServiceImpl;
 
-import java.io.BufferedReader;
-import java.io.PrintWriter;
-import java.io.StringReader;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Optional;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+public class HabitControllerTest {
 
-class HabitControllerTest {
+    private MockMvc mockMvc;
+    private ObjectMapper objectMapper;
 
     @Mock
     private HabitService habitService;
 
     @Mock
-    private HttpServletRequest request;
-
-    @Mock
-    private HttpServletResponse response;
-
-    @Mock
-    private PrintWriter writer;
-
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private HabitMapper habitMapper;
 
     @InjectMocks
     private HabitController habitController;
 
     @BeforeEach
-    void setUp() throws Exception {
+    public void setUp() {
         MockitoAnnotations.openMocks(this);
-        when(response.getWriter()).thenReturn(writer);
+        this.mockMvc = MockMvcBuilders.standaloneSetup(habitController).build();
+        objectMapper = new ObjectMapper();
     }
 
     @Test
-    @DisplayName("Успешное получение всех привычек")
-    void testDoGetAllHabitsSuccess() throws Exception {
-        // Настройка параметров запроса и мока сервиса
-        when(request.getServletPath()).thenReturn("/api/habit/all");
-        when(request.getParameter("userId")).thenReturn("1");
-        when(request.getParameter("filter")).thenReturn("filter");
+    @DisplayName("Get habits with valid filter and userId")
+    public void getHabits() throws Exception {
+        long userId = 1L;
+        String filter = "test";
+        HabitResponseDto habitResponseDto = new HabitResponseDto(1L, "sleep", "a lot", "daily", "12-02-2222");
+        ArrayList<HabitResponseDto> habitResponseDtos = new ArrayList<>();
+        habitResponseDtos.add(habitResponseDto);
+        habitResponseDtos.add(habitResponseDto);
 
-        ArrayList<Habit> habits = new ArrayList<>();
-        habits.add(new Habit(1L, 1L, "sleep", "a lot", Frequency.DAILY, LocalDate.now().minusDays(1)));
-        when(habitService.getHabits(any(), any())).thenReturn(habits);
+        when(habitService.getHabits(userId, filter)).thenReturn(new ArrayList<>());
+        when(habitMapper.habitsToHabitResponseDtos(any())).thenReturn(habitResponseDtos);
 
-        habitController.doGet(request, response);
+        mockMvc.perform(MockMvcRequestBuilders.get("/habit/{userId}/all/{filter}", userId, filter)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.jsonPath("$").isArray());
 
-        verify(response).setStatus(HttpServletResponse.SC_OK);
-        verify(writer).write(any(String.class));
+        verify(habitService).getHabits(userId, filter);
     }
 
     @Test
-    @DisplayName("Успешное создание привычки")
-    void testDoPostCreateHabitSuccess() throws Exception {
-        when(request.getParameter("userId")).thenReturn("1");
-        HabitRequestDto habitRequestDto = new HabitRequestDto("Updated Habit", "a new description", "daily");
-        when(habitService.createHabit(anyLong(), any(Habit.class))).thenReturn((long) 1);
-        when(request.getReader()).thenReturn(new BufferedReader(new StringReader(objectMapper.writeValueAsString(habitRequestDto))));
+    @DisplayName("get the habit when the habit is exist")
+    public void getHabit() throws Exception {
 
+        long userId = 1L;
+        String habitName = "sleep";
+        Habit habit = new Habit("sleep", "a lot", Frequency.DAILY, LocalDate.now());
+        HabitResponseDto habitResponseDto = new HabitResponseDto(1L, "sleep", "a lot", "daily", "12-02-2222");
 
-        habitController.doPost(request, response);
+        when(habitService.getHabit(habitName, userId)).thenReturn(Optional.of(habit));
+        when(habitMapper.habitToHabitResponseDto(habit)).thenReturn(habitResponseDto);
 
-        verify(response).setStatus(HttpServletResponse.SC_CREATED);
+        mockMvc.perform(MockMvcRequestBuilders.get("/habit/{userId}/{name}", userId, habitName)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.name").value(habitName));
+
+        verify(habitService).getHabit(habitName, userId);
     }
 
     @Test
-    @DisplayName("Успешное обновление привычки")
-    void testDoPutUpdateHabitSuccess() throws Exception {
-        when(request.getParameter("habitId")).thenReturn("1");
+    @DisplayName("Create habit when input is valid")
+    public void createHabit() throws Exception {
+
+        long userId = 1L;
+        HabitRequestDto habitRequestDto = new HabitRequestDto("sleep", "a lot", "daily");
+        Habit habit = new Habit("sleep", "a lot", Frequency.DAILY, LocalDate.now());
+        HabitResponseDto habitResponseDto = new HabitResponseDto(1L, "sleep", "a lot", "daily", "12-02-2222");
+
+        when(habitMapper.habitRequestDtoToHabit(habitRequestDto)).thenReturn(habit);
+        when(habitService.getHabit(habitRequestDto.name(), userId)).thenReturn(Optional.of(habit));
+        when(habitMapper.habitToHabitResponseDto(habit)).thenReturn(habitResponseDto);
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/habit/{userId}/create", userId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(habitRequestDto))
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.name").value("sleep"));
+    }
+
+    @Test
+    @DisplayName("update successfully")
+    public void updateHabit() throws Exception {
+
+        long userId = 1L;
+        long habitId = 1L;
+        HabitRequestDto habitRequestDto = new HabitRequestDto("sleep", "a lot","daily");
+        Habit habit = new Habit(1L, userId,"sleep", "a lot", Frequency.DAILY, LocalDate.now());
+
+        when(habitMapper.habitRequestDtoToHabit(habitRequestDto)).thenReturn(habit);
         when(habitService.updateHabit(any(), any())).thenReturn(true);
-        HabitRequestDto habitRequestDto = new HabitRequestDto("Updated Habit", "a new description", "daily");
-        when(request.getReader()).thenReturn(new BufferedReader(new StringReader(objectMapper.writeValueAsString(habitRequestDto))));
 
-        habitController.doPut(request, response);
-
-        verify(response).setStatus(HttpServletResponse.SC_OK);
-        verify(writer).print(true);
+        mockMvc.perform(MockMvcRequestBuilders.put("/habit/{userId}/{habitId}", userId, habitId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(habitRequestDto))
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isOk());
     }
 
     @Test
-    @DisplayName("Удаление привычки")
-    void testDoDeleteHabitSuccess() throws Exception {
-        when(request.getParameter("habitId")).thenReturn("1");
-        when(habitService.deleteHabit(1L)).thenReturn(true);
+    @DisplayName("delete successfully")
+    public void deleteHabit_ShouldReturnOk_WhenHabitDeletedSuccessfully() throws Exception {
 
-        habitController.doDelete(request, response);
+        long userId = 1L;
+        long habitId = 1L;
 
-        verify(response).setStatus(HttpServletResponse.SC_OK);
-        verify(writer).print(true);
+        when(habitService.deleteHabit(habitId)).thenReturn(true);
+
+        mockMvc.perform(MockMvcRequestBuilders.delete("/habit/{userId}/{habitId}", userId, habitId))
+                .andExpect(MockMvcResultMatchers.status().isOk());
+
+        verify(habitService).deleteHabit(habitId);
     }
 }

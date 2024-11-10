@@ -2,23 +2,29 @@ package y_lab.repository.repositoryImpl;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+import y_lab.config.DataSourceConfig;
 import y_lab.domain.Habit;
 import y_lab.domain.enums.Frequency;
 import y_lab.repository.HabitRepository;
 import y_lab.repository.SqlScripts;
 
+import javax.sql.DataSource;
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.*;
 
 @Setter
 @Getter
+@Repository
 public class HabitRepositoryImpl implements HabitRepository {
 
-    private final Connection connection;
+    private final DataSource dataSource;
 
-    public HabitRepositoryImpl(Connection connection) {
-        this.connection = connection;
+    @Autowired
+    public HabitRepositoryImpl(DataSource dataSource){
+        this.dataSource = dataSource;
     }
 
     @Override
@@ -26,7 +32,8 @@ public class HabitRepositoryImpl implements HabitRepository {
 
         String sql = SqlScripts.HABIT_FIND_BY_ID;
 
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setLong(1, id);
             ResultSet resultSet = stmt.executeQuery();
 
@@ -49,7 +56,8 @@ public class HabitRepositoryImpl implements HabitRepository {
     public Optional<Habit> findByName(String name, Long userId) throws SQLException{
         String sql = SqlScripts.HABIT_FIND_BY_NAME;
 
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setLong(2, userId);
             stmt.setString(1, name);
             ResultSet resultSet = stmt.executeQuery();
@@ -73,7 +81,8 @@ public class HabitRepositoryImpl implements HabitRepository {
     public void save(Habit habit) throws SQLException{
         String sql = SqlScripts.HABIT_SAVE;
 
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setLong(1, habit.getUserId());
             stmt.setString(2, habit.getName());
             stmt.setString(3, habit.getDescription());
@@ -87,7 +96,8 @@ public class HabitRepositoryImpl implements HabitRepository {
     @Override
     public void delete(Long id) throws SQLException{
         String sql = SqlScripts.HABIT_DELETE_BY_ID;
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setLong(1, id);
             stmt.executeUpdate();
         }
@@ -96,7 +106,8 @@ public class HabitRepositoryImpl implements HabitRepository {
     @Override
     public void deleteAllByUserId(Long userId) throws SQLException{
         String sql = SqlScripts.HABIT_DELETE_ALL_BY_USER_ID;
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setLong(1, userId);
             stmt.executeUpdate();
         }
@@ -108,7 +119,8 @@ public class HabitRepositoryImpl implements HabitRepository {
 
         String sql = SqlScripts.HABIT_FIND_BY_USER_ID;
 
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setLong(1, userId);
             ResultSet resultSet = stmt.executeQuery();
 
@@ -134,7 +146,8 @@ public class HabitRepositoryImpl implements HabitRepository {
 
         String sql = SqlScripts.HABIT_GET_ALL;
 
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
             ResultSet resultSet = stmt.executeQuery();
 
             while (resultSet.next()) {
@@ -157,7 +170,8 @@ public class HabitRepositoryImpl implements HabitRepository {
     public void update(Long id, Habit habit) throws SQLException{
         String sql = SqlScripts.HABIT_UPDATE;
 
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setLong(6, habit.getId());
             stmt.setLong(1, habit.getUserId());
             stmt.setString(2, habit.getName());

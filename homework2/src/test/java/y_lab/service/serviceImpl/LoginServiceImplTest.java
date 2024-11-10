@@ -1,5 +1,6 @@
 package y_lab.service.serviceImpl;
 
+import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -9,12 +10,10 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import y_lab.domain.User;
 import y_lab.dto.LoginResponseDto;
-import y_lab.repository.UserRepository;
 import y_lab.repository.repositoryImpl.UserRepositoryImpl;
 import y_lab.util.HashFunction;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,14 +29,24 @@ public class LoginServiceImplTest {
 
     private Connection connection;
     private LoginServiceImpl loginService;
+    private final HikariDataSource dataSource = new HikariDataSource();
 
     @BeforeEach
     public void setUp() throws SQLException {
-        connection = DriverManager.getConnection(postgresContainer.getJdbcUrl(), postgresContainer.getUsername(), postgresContainer.getPassword());
+        dataSource.setJdbcUrl(postgresContainer.getJdbcUrl());
+        dataSource.setUsername(postgresContainer.getUsername());
+        dataSource.setPassword(postgresContainer.getPassword());
 
-        UserRepository userRepository = new UserRepositoryImpl(connection);
+        dataSource.setMaximumPoolSize(10);
+        dataSource.setMinimumIdle(3);
+        dataSource.setConnectionTimeout(30000);
+        dataSource.setIdleTimeout(600000);
+        dataSource.setMaxLifetime(1800000);
 
-        loginService = new LoginServiceImpl(userRepository, connection);
+        connection = dataSource.getConnection();
+
+        UserRepositoryImpl userRepository = new UserRepositoryImpl(dataSource);
+        loginService = new LoginServiceImpl(userRepository, dataSource);
 
         CreateSchema.createSchema(connection);
     }
@@ -59,7 +68,6 @@ public class LoginServiceImplTest {
     @Test
     @DisplayName("login and registration")
     public void Login() {
-
         User user = User.builder()
                 .name("John Doe")
                 .email("john.doe@example.com")

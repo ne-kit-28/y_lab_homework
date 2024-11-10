@@ -1,5 +1,6 @@
 package y_lab.service.serviceImpl;
 
+import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -20,6 +21,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 @Testcontainers
@@ -32,16 +34,27 @@ class UserServiceImplTest {
             .withPassword("password");
     private UserServiceImpl userService;
     private Connection connection;
+    private final HikariDataSource dataSource = new HikariDataSource();
 
     @BeforeEach
     public void setUp() throws SQLException {
-        connection = DriverManager.getConnection(postgresContainer.getJdbcUrl(), postgresContainer.getUsername(), postgresContainer.getPassword());
+        dataSource.setJdbcUrl(postgresContainer.getJdbcUrl());
+        dataSource.setUsername(postgresContainer.getUsername());
+        dataSource.setPassword(postgresContainer.getPassword());
 
-        UserRepositoryImpl userRepository = new UserRepositoryImpl(connection);
-        HabitRepositoryImpl habitRepository = new HabitRepositoryImpl(connection);
-        ProgressRepositoryImpl progressRepository = new ProgressRepositoryImpl(connection);
+        dataSource.setMaximumPoolSize(10);
+        dataSource.setMinimumIdle(3);
+        dataSource.setConnectionTimeout(30000);
+        dataSource.setIdleTimeout(600000);
+        dataSource.setMaxLifetime(1800000);
 
-        userService = new UserServiceImpl(userRepository, habitRepository, progressRepository, connection);
+        connection = dataSource.getConnection();
+
+        UserRepositoryImpl userRepository = new UserRepositoryImpl(dataSource);
+        HabitRepositoryImpl habitRepository = new HabitRepositoryImpl(dataSource);
+        ProgressRepositoryImpl progressRepository = new ProgressRepositoryImpl(dataSource);
+
+        userService = new UserServiceImpl(userRepository, habitRepository, progressRepository, dataSource);
 
         CreateSchema.createSchema(connection);
 
@@ -76,10 +89,10 @@ class UserServiceImplTest {
         userService.editUser(userId, user);
 
         Optional<User> updatedUser = userService.getUser("updated@example.com");
-        assertTrue(updatedUser.isPresent());
-        assertEquals("Updated User", updatedUser.get().getName());
-        assertEquals("updated@example.com", updatedUser.get().getEmail());
-        assertEquals(HashFunction.hashPassword("newPassword"), updatedUser.get().getPasswordHash());
+        assertThat(updatedUser).isPresent();
+        assertThat(updatedUser.get().getName()).isEqualTo("Updated User");
+        assertThat(updatedUser.get().getEmail()).isEqualTo("updated@example.com");
+        assertThat(updatedUser.get().getPasswordHash()).isEqualTo(HashFunction.hashPassword("newPassword"));
     }
 
     @Test
@@ -88,7 +101,7 @@ class UserServiceImplTest {
         Optional<User> deletedUser = userService.getUser("test@example.com");
         userService.deleteUser(deletedUser.get().getId());
         deletedUser = userService.getUser("test@example.com");
-        assertFalse(deletedUser.isPresent(), "User should be deleted");
+        assertThat(deletedUser.isPresent()).isFalse();
     }
 
     @Test
@@ -98,14 +111,14 @@ class UserServiceImplTest {
         userService.blockUser(1L, true);
 
         Optional<User> blockedUser = userService.getUser("test@example.com");
-        assertTrue(blockedUser.isPresent(), "User should exist");
-        assertTrue(blockedUser.get().isBlock(), "User should be blocked");
+        assertThat(blockedUser).isPresent();
+        assertThat(blockedUser.get().isBlock()).isTrue();
     }
 
     @Test
     @DisplayName("Получает список всех пользователей")
-    void getUsers() {
-        LoginServiceImpl loginService = new LoginServiceImpl(new UserRepositoryImpl(connection), connection);
+    void getUsers() throws SQLException {
+        LoginServiceImpl loginService = new LoginServiceImpl(new UserRepositoryImpl(dataSource), dataSource);
         loginService.register(User.builder()
                 .name("User One")
                 .email("user1@example.com")
@@ -119,7 +132,7 @@ class UserServiceImplTest {
 
         ArrayList<User> users = userService.getUsers();
 
-        assertEquals(3, users.size(), "Should return 3 users");
+        assertThat(users.size()).isEqualTo(3);
 
         assertTrue(users.stream().anyMatch(u -> "test@example.com".equals(u.getEmail())));
         assertTrue(users.stream().anyMatch(u -> "user1@example.com".equals(u.getEmail())));

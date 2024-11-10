@@ -2,27 +2,34 @@ package y_lab.service.serviceImpl;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import y_lab.domain.User;
 import y_lab.domain.enums.Role;
 import y_lab.dto.LoginResponseDto;
 import y_lab.repository.UserRepository;
+import y_lab.repository.repositoryImpl.UserRepositoryImpl;
 import y_lab.service.LoginService;
 import y_lab.util.EmailValidator;
 import y_lab.util.HashFunction;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Optional;
 import java.util.UUID;
 
+@Service
 public class LoginServiceImpl implements LoginService {
     private final UserRepository userRepository;
     private  final Connection connection;
     private static final Logger logger = LoggerFactory.getLogger(LoginServiceImpl.class);
 
-    public LoginServiceImpl(UserRepository userRepository, Connection connection) {
+    @Autowired
+    public LoginServiceImpl(UserRepositoryImpl userRepository, DataSource dataSource) throws SQLException {
         this.userRepository = userRepository;
-        this.connection = connection;
+        this.connection = dataSource.getConnection();
     }
 
     @Override
@@ -75,7 +82,6 @@ public class LoginServiceImpl implements LoginService {
     }
 
     private void sendResetEmail(String email, String token, String element) {
-        // In an actual application, this would handle sending an email
         System.out.println("Email sent to " + email + " with " + element + token);
     }
 
