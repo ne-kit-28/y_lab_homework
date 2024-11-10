@@ -1,7 +1,7 @@
 databaseChangeLog:
   - include:
-        file: create-schema.yaml
-        relativeToChangelogFile: true
+      file: create-schema.yaml
+      relativeToChangelogFile: true
   - include:
       file: create-tables.yaml
       relativeToChangelogFile: true

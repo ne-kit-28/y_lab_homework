@@ -6,8 +6,5 @@ spring:
     username: y_lab_user
     password: Y_lab_password
     driver-class-name: org.postgresql.Driver
-  liquibase:
-    enabled: true
-    change-log: classpath:db/changelog/db.changelog-master.yaml
 log-package-starter:
   env: y_lab

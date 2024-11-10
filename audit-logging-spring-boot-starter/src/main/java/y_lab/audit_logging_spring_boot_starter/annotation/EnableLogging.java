@@ -11,8 +11,8 @@ import java.lang.annotation.Target;
 /**
  * Аннотация для включения логирования в проекте.
  */
-@Target(ElementType.TYPE) // Можно использовать на уровне классов
-@Retention(RetentionPolicy.RUNTIME) // Доступна во время выполнения
-@Import(LoggingConfig.class) // Подключение конфигурации стартеров
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Import(LoggingConfig.class)
 public @interface EnableLogging {
 }

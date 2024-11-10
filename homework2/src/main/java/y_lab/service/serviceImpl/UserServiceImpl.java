@@ -80,6 +80,7 @@ public class UserServiceImpl implements UserService {
             logger.info("Profile updated successfully!");
             edit = true;
         } catch (SQLException e) {
+            logger.info("SQL error in UserServiceImpl:editUser");
             e.printStackTrace();
         }
         return edit;
@@ -106,6 +107,7 @@ public class UserServiceImpl implements UserService {
             logger.info("Profile block is " + user.isBlock());
             edit = true;
         } catch (SQLException e) {
+            logger.info("SQL error in UserServiceImpl:blockUser");
             e.printStackTrace();
         }
         return edit;
@@ -125,6 +127,7 @@ public class UserServiceImpl implements UserService {
             logger.info("User and all habits were deleted!");
             edit = true;
         } catch (SQLException e) {
+            logger.info("SQL error in UserServiceImpl:deleteUser");
             e.printStackTrace();
         }
         return edit;
@@ -140,6 +143,7 @@ public class UserServiceImpl implements UserService {
             user = userRepository.findByEmail(email);
 
         } catch (SQLException e) {
+            logger.info("SQL error in UserServiceImpl:getUser");
             e.printStackTrace();
         }
         return user;
@@ -166,6 +170,7 @@ public class UserServiceImpl implements UserService {
                 }
             }
         } catch (SQLException e) {
+            logger.info("SQL error in UserServiceImpl:getUsers");
             e.printStackTrace();
         }
         return users;

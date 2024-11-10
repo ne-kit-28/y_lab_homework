@@ -55,6 +55,7 @@ public class HabitServiceImpl implements HabitService {
             }
 
         } catch (SQLException e) {
+            logger.info("SQL error in HabitServiceImpl:createHabit");
             e.printStackTrace();
         }
         return habitId;
@@ -72,6 +73,7 @@ public class HabitServiceImpl implements HabitService {
             logger.info("Habit with id: " + id + " was deleted!");
             del = true;
         } catch (SQLException e) {
+            logger.info("SQL error in HabitServiceImpl:deleteHabit");
             e.printStackTrace();
         }
         return del;
@@ -111,6 +113,7 @@ public class HabitServiceImpl implements HabitService {
             }
 
         } catch (SQLException e) {
+            logger.info("SQL error in HabitServiceImpl:getHabits");
             e.printStackTrace();
         }
         return  habits;
@@ -132,6 +135,7 @@ public class HabitServiceImpl implements HabitService {
 
             return habit;
         } catch (SQLException e) {
+            logger.info("SQL error in HabitServiceImpl:getHabit(by habitName)");
             e.printStackTrace();
         }
         return Optional.empty();
@@ -152,6 +156,7 @@ public class HabitServiceImpl implements HabitService {
 
             return habit;
         } catch (SQLException e) {
+            logger.info("SQL error in HabitServiceImpl:getHabit(by habitId)");
             e.printStackTrace();
         }
         return Optional.empty();
@@ -185,6 +190,8 @@ public class HabitServiceImpl implements HabitService {
 
             upd = true;
         } catch (SQLException e) {
+            logger.info("SQL error in HabitServiceImpl:updateHabit");
+
             e.printStackTrace();
         }
         return upd;

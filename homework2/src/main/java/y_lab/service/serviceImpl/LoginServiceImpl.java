@@ -55,6 +55,7 @@ public class LoginServiceImpl implements LoginService {
             return new LoginResponseDto(newUser.get().getId(), user.getEmail(), "", newUser.get().getRole().getValue(), "Successful!");
 
         } catch (SQLException e) {
+            logger.info("SQL error in LoginServiceImpl:login");
             e.printStackTrace();
         }
         return new LoginResponseDto(-1L, user.getEmail(), "", Role.UNAUTHORIZED.getValue(), "SQL error in loginService");
@@ -97,6 +98,7 @@ public class LoginServiceImpl implements LoginService {
             logger.info("Password has been successfully reset!");
             return new LoginResponseDto(newUser.get().getId(), user.getEmail(), password, newUser.get().getRole().getValue(),"Successful!");
         } catch (SQLException e) {
+            logger.info("SQL error in LoginServiceImpl:resetPassword");
             e.printStackTrace();
         }
         return new LoginResponseDto(-1L, user.getEmail(), "", Role.UNAUTHORIZED.getValue(), "sql error");
@@ -125,6 +127,7 @@ public class LoginServiceImpl implements LoginService {
             logger.info("Password reset resetToken sent to your email.");
             res = true;
         } catch (SQLException e) {
+            logger.info("SQL error in LoginServiceImpl:requestPasswordReset");
             e.printStackTrace();
         }
         return res;
@@ -162,6 +165,7 @@ public class LoginServiceImpl implements LoginService {
             logger.info("Registration successful!");
             return new LoginResponseDto(regUser.getId(), regUser.getEmail(), "", regUser.getRole().getValue(), "Successful!");
         } catch (SQLException e) {
+            logger.info("SQL error in LoginServiceImpl:register");
             e.printStackTrace();
         }
         return new LoginResponseDto(-1L, user.getEmail(), "", Role.UNAUTHORIZED.getValue(), "sql error");

@@ -68,6 +68,7 @@ public class ProgressServiceImpl implements ProgressService {
             logger.info("The habit is complete");
             return true;
         } catch (SQLException e) {
+            logger.info("SQL error in ProgressServiceImpl:createProgress");
             e.printStackTrace();
         }
         return false;
@@ -111,8 +112,10 @@ public class ProgressServiceImpl implements ProgressService {
 
             System.out.println(returnStr);
         } catch (SQLException e) {
+            logger.info("SQL error in ProgressServiceImpl:generateProgressStatistics");
             returnStr = "Sql error in generateProgressStatistic";
         } catch (NoSuchElementException e) {
+            logger.info("no habit with such id error in ProgressServiceImpl:generateProgressStatistics");
             returnStr = "no habit with such id";
         }
         return returnStr;
@@ -159,8 +162,10 @@ public class ProgressServiceImpl implements ProgressService {
 
             System.out.println(returnStr);
         } catch (SQLException e) {
+            logger.info("SQL error in ProgressServiceImpl:calculateStreak");
             returnStr = "Sql error in calculateStreak";
         } catch (NoSuchElementException e) {
+            logger.info("no habit with such id error in ProgressServiceImpl:calculateStreak");
             returnStr = "no habit with such id";
         }
         return  returnStr;
