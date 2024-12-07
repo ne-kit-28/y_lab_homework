@@ -1,24 +1,29 @@
 package y_lab.service.serviceImpl;
 
-import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import y_lab.domain.User;
 import y_lab.dto.LoginResponseDto;
-import y_lab.repository.repositoryImpl.UserRepositoryImpl;
 import y_lab.util.HashFunction;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers
+@SpringBootTest
 public class LoginServiceImplTest {
 
     @Container
@@ -28,26 +33,26 @@ public class LoginServiceImplTest {
             .withPassword("password");
 
     private Connection connection;
-    private LoginServiceImpl loginService;
-    private final HikariDataSource dataSource = new HikariDataSource();
+    private final LoginServiceImpl loginService;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    public LoginServiceImplTest(LoginServiceImpl loginService) {
+        this.loginService = loginService;
+    }
+
+    @DynamicPropertySource
+    static void configureProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", postgresContainer::getJdbcUrl);
+        registry.add("spring.datasource.username", postgresContainer::getUsername);
+        registry.add("spring.datasource.password", postgresContainer::getPassword);
+    }
 
     @BeforeEach
     public void setUp() throws SQLException {
-        dataSource.setJdbcUrl(postgresContainer.getJdbcUrl());
-        dataSource.setUsername(postgresContainer.getUsername());
-        dataSource.setPassword(postgresContainer.getPassword());
-
-        dataSource.setMaximumPoolSize(10);
-        dataSource.setMinimumIdle(3);
-        dataSource.setConnectionTimeout(30000);
-        dataSource.setIdleTimeout(600000);
-        dataSource.setMaxLifetime(1800000);
-
-        connection = dataSource.getConnection();
-
-        UserRepositoryImpl userRepository = new UserRepositoryImpl(dataSource);
-        loginService = new LoginServiceImpl(userRepository, dataSource);
-
+        connection = Objects.requireNonNull(jdbcTemplate.getDataSource()).getConnection();
         CreateSchema.createSchema(connection);
     }
 

@@ -1,4 +1,6 @@
-package y_lab.out.audit;
+package y_lab.audit_logging_spring_boot_starter.repository;
+
+import y_lab.audit_logging_spring_boot_starter.domain.AuditRecord;
 
 import java.sql.SQLException;
 import java.util.ArrayList;

@@ -1,15 +1,20 @@
 package y_lab.repository.repositoryImpl;
 
-import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import y_lab.domain.Habit;
 import y_lab.domain.enums.Frequency;
+import y_lab.service.serviceImpl.CreateSchema;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -20,71 +25,40 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 
+@SpringBootTest
 @Testcontainers
 public class HabitRepositoryImplTest {
 
     @Container
-    private PostgreSQLContainer<?> postgresContainer = new PostgreSQLContainer<>("postgres:15")
+    private static PostgreSQLContainer<?> postgresContainer = new PostgreSQLContainer<>("postgres:15")
             .withDatabaseName("testdb")
             .withUsername("testuser")
             .withPassword("testpass");
 
     private Connection connection;
-    private HabitRepositoryImpl habitRepository;
+    private final HabitRepositoryImpl habitRepository;
 
-    private final HikariDataSource dataSource = new HikariDataSource();
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    public HabitRepositoryImplTest(HabitRepositoryImpl habitRepository) {
+        this.habitRepository = habitRepository;
+    }
+
+    @DynamicPropertySource
+    static void configureProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", postgresContainer::getJdbcUrl);
+        registry.add("spring.datasource.username", postgresContainer::getUsername);
+        registry.add("spring.datasource.password", postgresContainer::getPassword);
+    }
 
     @BeforeEach
     void setUp() throws SQLException {
-        dataSource.setJdbcUrl(postgresContainer.getJdbcUrl());
-        dataSource.setUsername(postgresContainer.getUsername());
-        dataSource.setPassword(postgresContainer.getPassword());
 
-        dataSource.setMaximumPoolSize(10);
-        dataSource.setMinimumIdle(3);
-        dataSource.setConnectionTimeout(30000);
-        dataSource.setIdleTimeout(600000);
-        dataSource.setMaxLifetime(1800000);
+        connection = jdbcTemplate.getDataSource().getConnection();
 
-        connection = dataSource.getConnection();
-        habitRepository = new HabitRepositoryImpl(dataSource);
-
-        connection.prepareStatement(
-                "CREATE SCHEMA IF NOT EXISTS domain;" +
-                        "CREATE SEQUENCE IF NOT EXISTS domain.user_id_seq;" +
-                        "CREATE SEQUENCE IF NOT EXISTS domain.habit_id_seq;" +
-                        "CREATE SEQUENCE IF NOT EXISTS domain.progress_id_seq;"
-        ).execute();
-
-        connection.prepareStatement(
-                "CREATE TABLE IF NOT EXISTS domain.users (" +
-                        "id BIGINT PRIMARY KEY DEFAULT nextval('domain.user_id_seq'), " +
-                        "username VARCHAR(255));" +
-
-                        "CREATE TABLE IF NOT EXISTS domain.habits (" +
-                        "id BIGINT PRIMARY KEY DEFAULT nextval('domain.habit_id_seq'), " +
-                        "user_id BIGINT, " +
-                        "name VARCHAR(64), " +
-                        "description VARCHAR(128), " +
-                        "frequency VARCHAR(16), " +
-                        "created_at VARCHAR(32), " +
-                        "FOREIGN KEY (user_id) REFERENCES domain.users(id));" +
-
-                        "CREATE TABLE IF NOT EXISTS domain.progresses (" +
-                        "id BIGINT PRIMARY KEY DEFAULT nextval('domain.progress_id_seq'), " +
-                        "user_id BIGINT, " +
-                        "habit_id BIGINT, " +
-                        "date VARCHAR(32), " +
-                        "FOREIGN KEY (habit_id) REFERENCES domain.habits(id), " +
-                        "FOREIGN KEY (user_id) REFERENCES domain.users(id));"
-        ).execute();
-
-        connection.prepareStatement(
-                "CREATE SCHEMA IF NOT EXISTS service;" +
-                        "CREATE TABLE IF NOT EXISTS service.admins (" +
-                        "id BIGINT PRIMARY KEY, " +
-                        "email VARCHAR(255));"
-        ).execute();
+        CreateSchema.createSchema(connection);
     }
 
     @AfterEach
@@ -95,10 +69,10 @@ public class HabitRepositoryImplTest {
     }
 
     @Test
-    @DisplayName("Сохраняет и ищет пользователя")
+    @DisplayName("Сохраняет и ищет привычки")
     void testSaveAndFindById() throws SQLException {
 
-        connection.prepareStatement("INSERT INTO domain.users (username) VALUES ('testuser');").execute();
+        connection.prepareStatement("INSERT INTO domain.users (name) VALUES ('testuser');").execute();
 
         Habit habit = new Habit(null, 1L, "Exercise", "Daily Exercise", Frequency.DAILY, LocalDate.now());
 
@@ -111,10 +85,11 @@ public class HabitRepositoryImplTest {
     }
 
     @Test
-    @DisplayName("Удаление пользователя")
+    @DisplayName("Удаление привычки")
     void testDeleteHabit() throws SQLException {
 
-        connection.prepareStatement("INSERT INTO domain.users (username) VALUES ('testuser');").execute();
+        connection.prepareStatement("INSERT INTO domain.users (id, email, password_hash, name, is_block, role) " +
+                "VALUES (nextval('domain.user_id_seq'), 'user10@example.com', 'hashed_password_1', 'testuser', 'false', 'REGULAR');").execute();
 
         Habit habit = new Habit(null, 1L, "Read", "Read daily", Frequency.DAILY, LocalDate.now());
         habitRepository.save(habit);
@@ -132,7 +107,8 @@ public class HabitRepositoryImplTest {
     @DisplayName("Получение всех привычек пользователя по userId")
     void testFindAllHabits() throws SQLException {
 
-        connection.prepareStatement("INSERT INTO domain.users (username) VALUES ('testuser');").execute();
+        connection.prepareStatement("INSERT INTO domain.users (id, email, password_hash, name, is_block, role) " +
+                "VALUES (nextval('domain.user_id_seq'), 'user10@example.com', 'hashed_password_1', 'testuser', 'false', 'REGULAR');").execute();
 
         Habit habit1 = new Habit(null, 1L, "Exercise", "Daily Exercise", Frequency.DAILY, LocalDate.now());
         Habit habit2 = new Habit(null, 1L, "Read", "Read daily", Frequency.DAILY, LocalDate.now());

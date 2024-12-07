@@ -1,4 +1,6 @@
-package y_lab.out.audit;
+package y_lab.audit_logging_spring_boot_starter.service;
+
+import y_lab.audit_logging_spring_boot_starter.domain.AuditRecord;
 
 import java.util.ArrayList;
 

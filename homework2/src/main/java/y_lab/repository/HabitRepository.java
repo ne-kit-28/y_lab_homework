@@ -10,7 +10,7 @@ import java.util.Optional;
  * Interface for managing Habit entities and handling persistence operations.
  * Responsible for saving, retrieving, and deleting habits associated with users.
  */
-public interface HabitRepository {
+public interface HabitRepository{
 
     /**
      * Retrieves a Habit by its unique identifier.

@@ -16,7 +16,6 @@ import y_lab.dto.UserResponseDto;
 import y_lab.mapper.UserMapper;
 import y_lab.mapper.UserMapperImpl;
 import y_lab.service.UserService;
-import y_lab.service.serviceImpl.UserServiceImpl;
 
 import java.util.Optional;
 
@@ -40,7 +39,9 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = "User not found")
     })
     @GetMapping(value = "/{userId}/{email}")
-    public ResponseEntity<UserResponseDto> getUser(@PathVariable("email") @Email String email) {
+    public ResponseEntity<UserResponseDto> getUser(
+            @PathVariable("userId") @Positive long userId,
+            @PathVariable("email") @Email String email) {
         Optional<User> user = userService.getUser(email);
         return user.map(value -> ResponseEntity.ok(userMapper.userToUserResponseDto(value)))
                 .orElseGet(() -> ResponseEntity.notFound().build());

@@ -4,6 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import y_lab.audit_logging_spring_boot_starter.annotation.Auditable;
 import y_lab.domain.Habit;
 import y_lab.domain.Progress;
 import y_lab.domain.enums.Frequency;
@@ -13,8 +15,6 @@ import y_lab.repository.repositoryImpl.HabitRepositoryImpl;
 import y_lab.repository.repositoryImpl.ProgressRepositoryImpl;
 import y_lab.service.ProgressService;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.Period;
@@ -28,17 +28,15 @@ import java.util.Optional;
 public class ProgressServiceImpl implements ProgressService {
     private final HabitRepository habitRepository;
     private final ProgressRepository progressRepository;
-    private final Connection connection;
     private static final Logger logger = LoggerFactory.getLogger(ProgressServiceImpl.class);
 
     @Autowired
     public ProgressServiceImpl(
             HabitRepositoryImpl habitRepository
             , ProgressRepositoryImpl progressRepository
-            , DataSource dataSource) throws SQLException {
+            ) throws SQLException {
         this.habitRepository = habitRepository;
         this.progressRepository = progressRepository;
-        this.connection = dataSource.getConnection();
     }
 
     private LocalDate calculateStartDate(String period) {
@@ -52,10 +50,10 @@ public class ProgressServiceImpl implements ProgressService {
     }
 
     @Override
+    @Transactional
+    @Auditable
     public boolean createProgress(Long habitId) {
         try {
-            connection.setAutoCommit(false);
-
             Optional<Habit> habit = habitRepository.findById(habitId);
             if (habit.isEmpty())
                 return false;
@@ -67,28 +65,17 @@ public class ProgressServiceImpl implements ProgressService {
                     .build();
             progressRepository.save(progress);
 
-            connection.commit();
-
             logger.info("The habit is complete");
             return true;
         } catch (SQLException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException rollbackEx) {
-                rollbackEx.printStackTrace();
-            }
+            logger.info("SQL error in ProgressServiceImpl:createProgress");
             e.printStackTrace();
-        } finally {
-            try {
-                connection.setAutoCommit(true);
-            } catch (SQLException ex) {
-                ex.printStackTrace();
-            }
         }
         return false;
     }
 
     @Override
+    @Auditable
     public String generateProgressStatistics(Long habitId, String period) {
 
         String returnStr = "";
@@ -125,14 +112,17 @@ public class ProgressServiceImpl implements ProgressService {
 
             System.out.println(returnStr);
         } catch (SQLException e) {
+            logger.info("SQL error in ProgressServiceImpl:generateProgressStatistics");
             returnStr = "Sql error in generateProgressStatistic";
         } catch (NoSuchElementException e) {
+            logger.info("no habit with such id error in ProgressServiceImpl:generateProgressStatistics");
             returnStr = "no habit with such id";
         }
         return returnStr;
     }
 
     @Override
+    @Auditable
     public String calculateStreak(Long habitId) {
 
         String returnStr = "";
@@ -172,14 +162,17 @@ public class ProgressServiceImpl implements ProgressService {
 
             System.out.println(returnStr);
         } catch (SQLException e) {
+            logger.info("SQL error in ProgressServiceImpl:calculateStreak");
             returnStr = "Sql error in calculateStreak";
         } catch (NoSuchElementException e) {
+            logger.info("no habit with such id error in ProgressServiceImpl:calculateStreak");
             returnStr = "no habit with such id";
         }
         return  returnStr;
     }
 
     @Override
+    @Auditable
     public String generateReport(Long habitId, String period) {
 
         String statistic = this.generateProgressStatistics(habitId, period);

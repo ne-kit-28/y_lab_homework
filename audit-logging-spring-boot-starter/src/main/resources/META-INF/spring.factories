@@ -1,0 +1,1 @@
+org.springframework.boot.env.EnvironmentPostProcessor=y_lab.audit_logging_spring_boot_starter.util.EnvPostProcessor

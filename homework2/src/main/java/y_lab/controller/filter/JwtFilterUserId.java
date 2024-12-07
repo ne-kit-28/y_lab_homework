@@ -6,14 +6,11 @@ import jakarta.servlet.FilterConfig;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
-import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Arrays;
 
-import y_lab.domain.enums.Role;
-import y_lab.out.audit.UserContext;
+import y_lab.out.audit.UserContextImpl;
 import y_lab.util.JwtUtil;
 
 /**
@@ -56,11 +53,12 @@ public class JwtFilterUserId implements Filter {
             Long userIdFromToken = JwtUtil.getUserId(token);
 
             String url = req.getRequestURI();
+
             String[] pathSegments = url.split("/");
             Long userIdFromUrl = null;
 
-            if (pathSegments.length >= 4) {
-                userIdFromUrl = Long.parseLong(pathSegments[4]);
+            if (pathSegments.length >= 2) {
+                userIdFromUrl = Long.parseLong(pathSegments[2]);
             }
 
             if (userIdFromUrl != null && !userIdFromUrl.equals(userIdFromToken)) {
@@ -68,11 +66,11 @@ public class JwtFilterUserId implements Filter {
                 return;
             }
 
-            UserContext.setUserId(userIdFromToken);
+            UserContextImpl.setUserId(userIdFromToken);
             try {
                 chain.doFilter(request, response);
             } finally {
-                UserContext.clear();
+                UserContextImpl.clear();
             }
 
         } catch (Exception e) {

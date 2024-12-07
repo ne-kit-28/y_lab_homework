@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: audit-logging-spring-boot-starter
+log-package-starter:
+  env: y_lab

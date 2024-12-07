@@ -10,7 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import y_lab.domain.enums.Role;
-import y_lab.out.audit.UserContext;
+import y_lab.out.audit.UserContextImpl;
 import y_lab.util.JwtUtil;
 
 /**
@@ -58,11 +58,11 @@ public class JwtFilterRole implements Filter {
                 return;
             }
 
-            UserContext.setUserId(userIdFromToken);
+            UserContextImpl.setUserId(userIdFromToken);
             try {
                 chain.doFilter(request, response);
             } finally {
-                UserContext.clear();
+                UserContextImpl.clear();
             }
 
         } catch (Exception e) {

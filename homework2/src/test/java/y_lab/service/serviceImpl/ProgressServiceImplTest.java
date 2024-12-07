@@ -1,10 +1,14 @@
 package y_lab.service.serviceImpl;
 
-import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -22,48 +26,52 @@ import java.io.PrintStream;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.util.Objects;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers
+@SpringBootTest
 public class ProgressServiceImplTest {
 
     @Container
-    private PostgreSQLContainer<?> postgresContainer = new PostgreSQLContainer<>("postgres:latest")
+    private static PostgreSQLContainer<?> postgresContainer = new PostgreSQLContainer<>("postgres:latest")
             .withDatabaseName("test_db")
             .withUsername("test")
             .withPassword("test");
 
     private Connection connection;
-    private ProgressRepositoryImpl progressRepository;
-    private ProgressServiceImpl progressService;
-    private final HikariDataSource dataSource = new HikariDataSource();
+    private final HabitRepositoryImpl habitRepository;
+    private final UserRepositoryImpl userRepository;
+    private final ProgressRepositoryImpl progressRepository;
+    private final ProgressServiceImpl progressService;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    public ProgressServiceImplTest(HabitRepositoryImpl habitRepository, UserRepositoryImpl userRepository, ProgressRepositoryImpl progressRepository, ProgressServiceImpl progressService) {
+        this.habitRepository = habitRepository;
+        this.userRepository = userRepository;
+        this.progressRepository = progressRepository;
+        this.progressService = progressService;
+    }
+
+    @DynamicPropertySource
+    static void configureProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", postgresContainer::getJdbcUrl);
+        registry.add("spring.datasource.username", postgresContainer::getUsername);
+        registry.add("spring.datasource.password", postgresContainer::getPassword);
+    }
 
     @BeforeEach
     public void setUp() throws SQLException {
-        dataSource.setJdbcUrl(postgresContainer.getJdbcUrl());
-        dataSource.setUsername(postgresContainer.getUsername());
-        dataSource.setPassword(postgresContainer.getPassword());
-
-        dataSource.setMaximumPoolSize(10);
-        dataSource.setMinimumIdle(3);
-        dataSource.setConnectionTimeout(30000);
-        dataSource.setIdleTimeout(600000);
-        dataSource.setMaxLifetime(1800000);
-
-        connection = dataSource.getConnection();
-
+        connection = Objects.requireNonNull(jdbcTemplate.getDataSource()).getConnection();
         CreateSchema.createSchema(connection);
 
-        UserRepositoryImpl userRepository = new UserRepositoryImpl(dataSource);
         userRepository.save(new User("test@example.com", "hashedPassword", "TestUser", false, Role.REGULAR));
-
-        HabitRepositoryImpl habitRepository = new HabitRepositoryImpl(dataSource);
         habitRepository.save(new Habit(null, 1L, "sleep", "a lot", Frequency.DAILY, LocalDate.now()));
-
-        progressRepository = new ProgressRepositoryImpl(dataSource);
-        progressService = new ProgressServiceImpl(habitRepository, progressRepository, dataSource);
     }
 
     @AfterEach

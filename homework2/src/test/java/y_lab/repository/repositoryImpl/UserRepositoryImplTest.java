@@ -5,68 +5,62 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import y_lab.domain.User;
 import y_lab.domain.enums.Role;
+import y_lab.service.serviceImpl.CreateSchema;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
+@SpringBootTest
 @Testcontainers
 public class UserRepositoryImplTest {
 
     @Container
-    private PostgreSQLContainer<?> postgresContainer = new PostgreSQLContainer<>("postgres:15")
+    private static PostgreSQLContainer<?> postgresContainer = new PostgreSQLContainer<>("postgres:15")
             .withDatabaseName("testdb")
             .withUsername("testuser")
             .withPassword("testpass");
 
     private Connection connection;
-    private final HikariDataSource dataSource = new HikariDataSource();
-    private UserRepositoryImpl userRepository;
+    private final UserRepositoryImpl userRepository;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    public UserRepositoryImplTest(UserRepositoryImpl userRepository) {
+        this.userRepository = userRepository;
+    }
+
+    @DynamicPropertySource
+    static void configureProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", postgresContainer::getJdbcUrl);
+        registry.add("spring.datasource.username", postgresContainer::getUsername);
+        registry.add("spring.datasource.password", postgresContainer::getPassword);
+    }
 
     @BeforeEach
     void setUp() throws SQLException {
-        dataSource.setJdbcUrl(postgresContainer.getJdbcUrl());
-        dataSource.setUsername(postgresContainer.getUsername());
-        dataSource.setPassword(postgresContainer.getPassword());
 
-        dataSource.setMaximumPoolSize(10);
-        dataSource.setMinimumIdle(3);
-        dataSource.setConnectionTimeout(30000);
-        dataSource.setIdleTimeout(600000);
-        dataSource.setMaxLifetime(1800000);
+        connection = Objects.requireNonNull(jdbcTemplate.getDataSource()).getConnection();
 
-        connection = dataSource.getConnection();
-
-        userRepository = new UserRepositoryImpl(dataSource);
-
-        connection.prepareStatement(
-                "CREATE SCHEMA IF NOT EXISTS domain;" +
-                        "CREATE SEQUENCE IF NOT EXISTS domain.user_id_seq;" +
-                        "CREATE TABLE IF NOT EXISTS domain.users (" +
-                        "id BIGINT PRIMARY KEY DEFAULT nextval('domain.user_id_seq'), " +
-                        "email VARCHAR(255), " +
-                        "password_hash VARCHAR(255), " +
-                        "name VARCHAR(255), " +
-                        "is_block BOOLEAN, " +
-                        "role VARCHAR(50), " +
-                        "reset_token VARCHAR(255));"
-        ).execute();
-
-        connection.prepareStatement(
-                "CREATE SCHEMA IF NOT EXISTS service;" +
-                        "CREATE TABLE IF NOT EXISTS service.admins (" +
-                        "email VARCHAR(255) PRIMARY KEY);"
-        ).execute();
+        CreateSchema.createSchema(connection);
     }
 
     @AfterEach

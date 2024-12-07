@@ -3,20 +3,17 @@ package y_lab.service.serviceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import y_lab.audit_logging_spring_boot_starter.annotation.Auditable;
 import y_lab.domain.Habit;
-import y_lab.domain.User;
 import y_lab.domain.enums.Frequency;
 import y_lab.repository.HabitRepository;
 import y_lab.repository.ProgressRepository;
 import y_lab.repository.repositoryImpl.HabitRepositoryImpl;
 import y_lab.repository.repositoryImpl.ProgressRepositoryImpl;
-import y_lab.repository.repositoryImpl.UserRepositoryImpl;
 import y_lab.service.HabitService;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -25,29 +22,27 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 
 @Service
+@Transactional
 public class HabitServiceImpl implements HabitService {
     private final HabitRepository habitRepository;
     private final ProgressRepository progressRepository;
-    private final Connection connection;
     private static final Logger logger = LoggerFactory.getLogger(HabitServiceImpl.class);
 
     @Autowired
     public HabitServiceImpl(HabitRepositoryImpl habitRepository
             , ProgressRepositoryImpl progressRepository
-            , DataSource dataSource) throws SQLException {
+            ) throws SQLException {
         this.habitRepository = habitRepository;
         this.progressRepository = progressRepository;
-        this.connection = dataSource.getConnection();
     }
 
     @Override
+    @Auditable
     public Long createHabit(Long userId, Habit habit) {
 
         Long habitId = -1L;
 
         try {
-            connection.setAutoCommit(false);
-
             if (habitRepository.findByName(habit.getName(), userId).isPresent()) {
                 logger.info("Habit with such name exists");
                 logger.info("Habit is not created");
@@ -59,63 +54,38 @@ public class HabitServiceImpl implements HabitService {
                 logger.info("Habit " + habit.getName() + " is created!");
             }
 
-            connection.commit();
         } catch (SQLException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException rollbackEx) {
-                rollbackEx.printStackTrace();
-            }
+            logger.info("SQL error in HabitServiceImpl:createHabit");
             e.printStackTrace();
-        } finally {
-            try {
-                connection.setAutoCommit(true);
-            } catch (SQLException ex) {
-                ex.printStackTrace();
-            }
         }
         return habitId;
     }
 
     @Override
+    @Auditable
     public boolean deleteHabit(Long id) {
 
         boolean del = false;
 
         try {
-            connection.setAutoCommit(false);
-
             habitRepository.delete(id);
             progressRepository.deleteAllByHabitId(id);
             logger.info("Habit with id: " + id + " was deleted!");
-
-            connection.commit();
             del = true;
         } catch (SQLException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException rollbackEx) {
-                rollbackEx.printStackTrace();
-            }
+            logger.info("SQL error in HabitServiceImpl:deleteHabit");
             e.printStackTrace();
-        } finally {
-            try {
-                connection.setAutoCommit(true);
-            } catch (SQLException ex) {
-                ex.printStackTrace();
-            }
         }
         return del;
     }
 
     @Override
+    @Auditable
     public ArrayList<Habit> getHabits(Long userId, String filter) {
 
         ArrayList<Habit> habits = new ArrayList<>();
 
         try {
-            connection.setAutoCommit(false);
-
             habits = habitRepository.findHabitsByUserId(userId).orElseThrow(NoSuchElementException::new);
 
             if (filter.equalsIgnoreCase("weekly")) {
@@ -142,30 +112,18 @@ public class HabitServiceImpl implements HabitService {
                 }
             }
 
-            connection.commit();
         } catch (SQLException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException rollbackEx) {
-                rollbackEx.printStackTrace();
-            }
+            logger.info("SQL error in HabitServiceImpl:getHabits");
             e.printStackTrace();
-        } finally {
-            try {
-                connection.setAutoCommit(true);
-            } catch (SQLException ex) {
-                ex.printStackTrace();
-            }
         }
         return  habits;
     }
 
     @Override
+    @Auditable
     public Optional<Habit> getHabit(String habitName, Long userId) {
 
         try {
-            connection.setAutoCommit(false);
-
             Optional<Habit> habit = habitRepository.findByName(habitName, userId);
             if (habit.isPresent()) {
                 logger.info("Name: " + habit.get().getName());
@@ -175,30 +133,18 @@ public class HabitServiceImpl implements HabitService {
             } else
                 logger.info("No such habit");
 
-            connection.commit();
             return habit;
         } catch (SQLException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException rollbackEx) {
-                rollbackEx.printStackTrace();
-            }
+            logger.info("SQL error in HabitServiceImpl:getHabit(by habitName)");
             e.printStackTrace();
-        } finally {
-            try {
-                connection.setAutoCommit(true);
-            } catch (SQLException ex) {
-                ex.printStackTrace();
-            }
         }
         return Optional.empty();
     }
 
     @Override
+    @Auditable
     public Optional<Habit> getHabit(Long habitId) {
         try {
-            connection.setAutoCommit(false);
-
             Optional<Habit> habit = habitRepository.findById(habitId);
             if (habit.isPresent()) {
                 logger.info("Name: " + habit.get().getName());
@@ -208,33 +154,21 @@ public class HabitServiceImpl implements HabitService {
             } else
                 logger.info("No such habit");
 
-            connection.commit();
             return habit;
         } catch (SQLException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException rollbackEx) {
-                rollbackEx.printStackTrace();
-            }
+            logger.info("SQL error in HabitServiceImpl:getHabit(by habitId)");
             e.printStackTrace();
-        } finally {
-            try {
-                connection.setAutoCommit(true);
-            } catch (SQLException ex) {
-                ex.printStackTrace();
-            }
         }
         return Optional.empty();
     }
 
     @Override
+    @Auditable
     public boolean updateHabit(Long id, Habit newHabit) {
 
         boolean upd = false;
 
         try {
-            connection.setAutoCommit(false);
-
             Optional<Habit> habit = habitRepository.findById(id);
 
             if (habit.isEmpty()) {
@@ -254,21 +188,11 @@ public class HabitServiceImpl implements HabitService {
             habitRepository.update(id, habit.get());
             logger.info("Habit updated successfully!");
 
-            connection.commit();
             upd = true;
         } catch (SQLException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException rollbackEx) {
-                rollbackEx.printStackTrace();
-            }
+            logger.info("SQL error in HabitServiceImpl:updateHabit");
+
             e.printStackTrace();
-        } finally {
-            try {
-                connection.setAutoCommit(true);
-            } catch (SQLException ex) {
-                ex.printStackTrace();
-            }
         }
         return upd;
     }
