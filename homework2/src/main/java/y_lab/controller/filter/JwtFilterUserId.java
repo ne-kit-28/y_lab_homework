@@ -39,6 +39,12 @@ public class JwtFilterUserId implements Filter {
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse resp = (HttpServletResponse) response;
 
+        // Allow CORS preflight requests to pass through
+        if ("OPTIONS".equalsIgnoreCase(req.getMethod())) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         String token = req.getHeader("Authorization");
 
         if (token == null || !token.startsWith("Bearer ")) {

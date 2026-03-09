@@ -1,0 +1,91 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Admin UI</title>
+    <style>
+      body { font-family: Arial, sans-serif; padding: 20px; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+      th { background: #f2f2f2; }
+      #login, #admin {
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Admin Panel (minimal)</h2>
+    <div id="login">
+      <h3>Login</h3>
+      <input id="email" placeholder="Email" />
+      <input id="password" placeholder="Password" type="password" />
+      <button id="loginBtn">Login</button>
+      <div id="loginMsg" style="color:red"></div>
+    </div>
+
+    <div id="admin" style="display:none;">
+      <h3>Users</h3>
+      <table id="usersTable">
+        <thead>
+          <tr><th>ID</th><th>Email</th><th>Name</th><th>Blocked</th><th>Role</th><th>Actions</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+<script>
+
+      const loginBtn = document.getElementById('loginBtn');
+      loginBtn.addEventListener('click', async () => {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const resp = await fetch('/login/signIn', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await resp.json();
+        if (resp.ok && data.id != null) {
+          // Try to obtain token from multiple sources for robustness
+          const tokenFromBody = data.token || data.authToken;
+          const headerToken = resp.headers.get('Authorization') ? resp.headers.get('Authorization').replace('Bearer ', '') : null;
+          const token = tokenFromBody || headerToken;
+          if (token) {
+            localStorage.setItem('admin_token', token);
+            document.getElementById('login').style.display = 'none';
+            document.getElementById('admin').style.display = 'block';
+            loadUsers(token);
+          } else {
+            document.getElementById('loginMsg').innerText = 'Token not received. Please check server response.';
+          }
+        } else {
+          document.getElementById('loginMsg').innerText = 'Login failed';
+        }
+      });
+
+      async function loadUsers(token) {
+        const resp = await fetch('/admin/user/all', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const users = await resp.json();
+        const tbody = document.querySelector('#usersTable tbody');
+        tbody.innerHTML = '';
+        for (const u of users) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${u.id}</td><td>${u.email}</td><td>${u.name || ''}</td><td>${u.isBlock ? 'true' : 'false'}</td><td>${(u.role && u.role.toString()) || ''}</td>`;
+          const td = document.createElement('td');
+          const btn = document.createElement('button');
+          btn.textContent = 'Toggle Block';
+          btn.addEventListener('click', async () => {
+            const status = !u.isBlock;
+            await fetch(`/admin/user/${u.id}/block/${status}`);
+            loadUsers(token);
+          });
+          td.appendChild(btn);
+          tr.appendChild(td);
+          tbody.appendChild(tr);
+        }
+      }
+    </script>
+  </body>
+  </html>

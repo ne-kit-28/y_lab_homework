@@ -15,7 +15,7 @@ import java.util.ArrayList;
  * between Habit entities and HabitRequestDto, and HabitResponseDto.
  * </p>
  */
-@Mapper(imports = {y_lab.domain.enums.Frequency.class})
+@Mapper(imports = {y_lab.domain.enums.Frequency.class}, componentModel = "spring")
 public interface HabitMapper {
 
     /**

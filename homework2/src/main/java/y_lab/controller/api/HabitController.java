@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Optional;
 
 @RestController
+@CrossOrigin(origins = "*")
 @RequestMapping(value = "/habit")
 @Tag(name = "Habit Management", description = "Operations related to habit management")
 public class HabitController {

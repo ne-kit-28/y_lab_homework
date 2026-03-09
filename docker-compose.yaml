@@ -1,0 +1,52 @@
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: y_lab_user
+      POSTGRES_PASSWORD: Y_lab_password
+      POSTGRES_DB: y_lab
+    ports:
+      - 5433:5432
+    networks:
+      - habits-network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: nickit.nic098@yandex.ru
+      PGADMIN_DEFAULT_PASSWORD: postgres
+    ports:
+      - "5050:80"
+    networks:
+      - habits-network
+
+  backend:
+    build:
+      context: .  # Указываем корень, чтобы Docker видел все папки
+      dockerfile: backend.Dockerfile
+    image: habits-backend
+    ports:
+      - "8080:8080"
+    restart: on-failure
+    depends_on:
+      - postgres
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/y_lab
+    networks:
+      - habits-network
+
+  frontend:
+    build: ./frontend
+    image: habits-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    environment:
+      - NEXT_PUBLIC_API_BASE_URL=http://backend:8080
+    networks:
+      - habits-network
+
+networks:
+  habits-network:
+    driver: bridge

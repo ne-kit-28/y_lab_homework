@@ -15,9 +15,11 @@ import y_lab.dto.LoginUpDto;
 import y_lab.mapper.LoginMapper;
 import y_lab.mapper.LoginMapperImpl;
 import y_lab.service.LoginService;
+import y_lab.util.HashFunction;
 import y_lab.util.JwtUtil;
 
 @RestController
+@CrossOrigin(origins = "*")
 @RequestMapping(value = "/login")
 @Tag(name = "Login", description = "Operations related to user login and registration")
 public class LoginController {
@@ -35,6 +37,8 @@ public class LoginController {
     @PostMapping(value = "/signIn")
     public ResponseEntity<LoginResponseDto> signIn(@RequestBody @Valid LoginInDto loginInDto) {
         LoginResponseDto loginResponseDto = loginService.login(loginMapper.loginInDtoToUser(loginInDto));
+        String attemptedHash = HashFunction.hashPassword(loginInDto.password());
+        System.out.println("Login attempt for email {}: password hash {} " + loginInDto.email() + " " + loginInDto.password());
         if (loginResponseDto.id() != -1L)
             return ResponseEntity.status(HttpStatus.OK)
                     .header("Authorization", "Bearer " + JwtUtil.generateToken(loginResponseDto.id(), loginResponseDto.role()))

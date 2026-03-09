@@ -15,6 +15,7 @@ import y_lab.service.LoginService;
 import y_lab.util.EmailValidator;
 import y_lab.util.HashFunction;
 
+import java.awt.event.WindowFocusListener;
 import java.sql.SQLException;
 import java.util.Optional;
 import java.util.UUID;
@@ -43,6 +44,9 @@ public class LoginServiceImpl implements LoginService {
 
             if (!newUser.get().getPasswordHash().equals(user.getPasswordHash())) {
                 logger.info("Incorrect password!");
+                System.out.println(user.getPasswordHash());
+                System.out.println(newUser.get().getPasswordHash());
+                // Micro-logging of the attempted password hash has been moved to LoginController
                 return new LoginResponseDto(-1L, user.getEmail(), "", Role.UNAUTHORIZED.getValue(), "Incorrect password!");
             }
 

@@ -20,6 +20,7 @@ import y_lab.service.UserService;
 import java.util.Optional;
 
 @RestController
+@CrossOrigin(origins = "*")
 @RequestMapping("/user")
 @Tag(name = "User", description = "User management operations")
 public class UserController {

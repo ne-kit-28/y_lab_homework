@@ -13,6 +13,7 @@ import y_lab.service.HabitService;
 import y_lab.service.ProgressService;
 
 @RestController
+@CrossOrigin(origins = "*")
 @RequestMapping(value = "/progress")
 @Tag(name = "Progress", description = "Operations related to user progress on habits")
 public class ProgressController {
